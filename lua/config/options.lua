@@ -37,5 +37,11 @@ vim.o.wrap = true
 vim.o.linebreak = true
 vim.o.showbreak = " 󱞩 "
 
+-- Use two-space indentation and insert spaces when pressing Tab.
+vim.o.tabstop = 2
+vim.o.softtabstop = 2
+vim.o.shiftwidth = 2
+vim.o.expandtab = true
+
 -- Configure system clipboard integration, including OSC52 clipboard support over SSH.
 require("config.clipboard")
