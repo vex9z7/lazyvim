@@ -18,5 +18,16 @@ vim.o.undofile = true
 vim.o.undolevels = 10000
 vim.o.undoreload = 10000
 
+-- Show invisible whitespace characters so indentation and stray spaces are visible.
+vim.o.list = true
+vim.opt.listchars = {
+  tab = "» ",
+  trail = "·",
+  space = "·",
+  nbsp = "␣",
+  extends = "⟩",
+  precedes = "⟨",
+}
+
 -- Configure system clipboard integration, including OSC52 clipboard support over SSH.
 require("config.clipboard")
