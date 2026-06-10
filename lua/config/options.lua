@@ -29,5 +29,13 @@ vim.opt.listchars = {
   precedes = "⟨",
 }
 
+-- Keep context around the cursor and make long lines wrap visually without
+-- inserting hard line breaks.
+vim.o.scrolloff = 10
+vim.o.textwidth = 0
+vim.o.wrap = true
+vim.o.linebreak = true
+vim.o.showbreak = " 󱞩 "
+
 -- Configure system clipboard integration, including OSC52 clipboard support over SSH.
 require("config.clipboard")
