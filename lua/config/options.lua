@@ -13,5 +13,10 @@ vim.o.mouse = "a"
 -- Hide the built-in mode text because the statusline already shows the current mode.
 vim.o.showmode = false
 
+-- Persist undo history across Neovim sessions and keep a deep undo tree.
+vim.o.undofile = true
+vim.o.undolevels = 10000
+vim.o.undoreload = 10000
+
 -- Configure system clipboard integration, including OSC52 clipboard support over SSH.
 require("config.clipboard")
