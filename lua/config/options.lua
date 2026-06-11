@@ -43,5 +43,5 @@ vim.o.softtabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
--- Configure system clipboard integration, including OSC52 clipboard support over SSH.
+-- Configure explicit system clipboard integration across local, SSH, and tmux sessions.
 require("config.clipboard")
