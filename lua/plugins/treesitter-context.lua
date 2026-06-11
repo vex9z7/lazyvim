@@ -3,7 +3,7 @@ return {
     "nvim-treesitter/nvim-treesitter-context",
     event = "LazyFile",
     opts = function()
-      local tsc = require("treesitter-context")
+      local tsc = require "treesitter-context"
       Snacks.toggle({
         name = "Treesitter Context",
         get = tsc.enabled,
@@ -14,7 +14,7 @@ return {
             tsc.disable()
           end
         end,
-      }):map("<leader>ut")
+      }):map "<leader>ut"
 
       return {
         mode = "cursor",
