@@ -14,3 +14,4 @@ while experimenting; reset them with Git when they get messy.
 - `highlight-colors.css` and `highlight-colors.jsx`: try inline color previews
   for hex, RGB, HSL, CSS variables, Tailwind classes, and arbitrary Tailwind
   color values.
+- `markdown.md`: try rendered Markdown display and the `<leader>um` toggle.
