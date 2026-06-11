@@ -26,7 +26,9 @@ vim.api.nvim_create_autocmd("User", {
   pattern = "VeryLazy",
   once = true,
   callback = function()
-    -- Apply after lazy-loaded defaults so the explicit clipboard preference wins.
+    -- Defer until all VeryLazy handlers finish; LazyVim restores its saved
+    -- clipboard value during the same event, so this explicit preference must
+    -- run one tick later to win on a fresh startup.
     vim.schedule(setup_clipboard)
   end,
 })
