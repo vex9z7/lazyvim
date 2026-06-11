@@ -1,7 +1,6 @@
--- Clipboard integration for local terminals, SSH sessions, and SSH inside tmux.
--- Normal yanks use the system clipboard; SSH uses OSC52; SSH inside tmux wraps
--- OSC52 in tmux passthrough.
-
+-- Make normal yanks, deletes, and pastes use the system clipboard register.
+-- LazyVim leaves 'clipboard' empty over SSH; this config prefers explicit
+-- clipboard behavior while still using Neovim's built-in providers.
 local function is_ssh()
   return vim.env.SSH_TTY ~= nil or vim.env.SSH_CONNECTION ~= nil
 end
@@ -10,67 +9,17 @@ local function is_tmux()
   return vim.env.TMUX ~= nil and vim.env.TMUX ~= ""
 end
 
-local function provider_name()
-  if not is_ssh() then
-    return "auto"
-  end
-
-  if is_tmux() then
-    return "osc52-tmux"
-  end
-
-  return "osc52"
-end
-
-local function encode_base64(text)
-  if vim.base64 and vim.base64.encode then
-    return vim.base64.encode(text)
-  end
-
-  return vim.fn.system({ "base64", "-w", "0" }, text):gsub("%s+$", "")
-end
-
-local function copy_with_osc52(lines, _)
-  local text = table.concat(lines, "\n")
-  local encoded = encode_base64(text)
-  local sequence = "\027]52;c;" .. encoded .. "\007"
-
-  if is_tmux() then
-    sequence = "\027Ptmux;\027" .. sequence:gsub("\027", "\027\027") .. "\027\\"
-  end
-
-  local ok, err = pcall(function()
-    -- OSC52 is a terminal control sequence, not buffer output. Writing it to
-    -- stderr follows common OSC52 plugin practice and keeps it away from any
-    -- stdout content that Neovim or jobs may be producing.
-    io.stderr:write(sequence)
-    io.stderr:flush()
-  end)
-
-  if not ok then
-    vim.notify("OSC52 clipboard copy failed: " .. tostring(err), vim.log.levels.WARN)
-  end
-end
-
-local function paste_from_unnamed_register()
-  return vim.split(vim.fn.getreg('"'), "\n"), vim.fn.getregtype('"')
-end
-
 local function setup_clipboard()
-  -- Make normal yanks, deletes, and pastes use the system clipboard register.
-  vim.o.clipboard = "unnamedplus"
+  -- Use Neovim's built-in provider detection locally and inside tmux. Modern
+  -- Neovim has a tmux provider that uses `tmux load-buffer -w -` when available.
+  vim.g.clipboard = false
 
-  -- For local terminals, let Neovim choose the provider. Over SSH, provide
-  -- OSC52 explicitly so copies can reach the client clipboard.
-  if is_ssh() then
-    vim.g.clipboard = {
-      name = provider_name(),
-      copy = { ["+"] = copy_with_osc52, ["*"] = copy_with_osc52 },
-      -- OSC52 paste/read is not consistently supported by terminals, so paste
-      -- falls back to Neovim's unnamed register instead of querying the terminal.
-      paste = { ["+"] = paste_from_unnamed_register, ["*"] = paste_from_unnamed_register },
-    }
+  -- Outside tmux, SSH sessions usually need OSC52 to reach the client clipboard.
+  if is_ssh() and not is_tmux() then
+    vim.g.clipboard = "osc52"
   end
+
+  vim.o.clipboard = "unnamedplus"
 end
 
 vim.api.nvim_create_autocmd("User", {
