@@ -1,0 +1,22 @@
+/* nvim-highlight-colors playground */
+
+.color-test {
+  color: #ff0000;
+  color: #3ff;
+  background: rgb(59 130 246);
+  border-color: hsl(150deg 30% 40%);
+  box-shadow: 0 0 0 1px var(--brand-primary);
+  --brand-primary: #12abef;
+  --brand-muted: hsl(220deg 14% 96%);
+}
+
+/* Named colors are intentionally disabled, so this should not get a swatch. */
+.named-color {
+  color: green;
+}
+
+/* Tailwind class names should get virtual swatches. */
+const className = "bg-blue-500 text-red-600 border-slate-200 from-purple-500 to-pink-500"
+
+/* Arbitrary Tailwind colors. */
+const arbitrary = "bg-[#1da1f2] text-[rgb(255,255,255)] border-[hsl(150deg_30%_40%)]"
