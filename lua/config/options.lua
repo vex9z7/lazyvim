@@ -44,4 +44,4 @@ vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
 -- Configure explicit system clipboard integration across local, SSH, and tmux sessions.
-require("config.clipboard")
+require "config.clipboard"
