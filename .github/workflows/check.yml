@@ -1,0 +1,50 @@
+name: Check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-format:
+    name: Lint and format
+    runs-on: ubuntu-latest
+
+    env:
+      STYLUA_VERSION: v2.5.2
+      SELENE_VERSION: 0.31.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install StyLua
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-x86_64.zip" -o /tmp/stylua.zip
+          unzip -q /tmp/stylua.zip -d /tmp/stylua
+          install -m 0755 /tmp/stylua/stylua "$HOME/.local/bin/stylua"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Selene
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/Kampfkarren/selene/releases/download/${SELENE_VERSION}/selene-${SELENE_VERSION}-linux.zip" -o /tmp/selene.zip
+          unzip -q /tmp/selene.zip -d /tmp/selene
+          install -m 0755 /tmp/selene/selene "$HOME/.local/bin/selene"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check versions
+        run: |
+          stylua --version
+          selene --version
+
+      - name: Run checks
+        run: make check
