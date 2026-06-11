@@ -15,3 +15,4 @@ while experimenting; reset them with Git when they get messy.
   for hex, RGB, HSL, CSS variables, Tailwind classes, and arbitrary Tailwind
   color values.
 - `markdown.md`: try rendered Markdown display and the `<leader>um` toggle.
+- `treesitter-context.tsx`: try sticky Treesitter context and the `<leader>ut` toggle.
