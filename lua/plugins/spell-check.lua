@@ -17,6 +17,10 @@ return {
       opts.servers.codebook = {
         -- Use the normal LSP attach path while Mason only manages the binary installation.
         mason = false,
+        init_options = {
+          -- Keep personal fallback dictionaries portable with this Neovim config.
+          globalConfigPath = vim.fn.stdpath "config" .. "/tool-config/codebook/codebook.toml",
+        },
         -- Prefer project Codebook config before falling back to the repository root.
         root_dir = function(bufnr, on_dir)
           on_dir(util.root_pattern("codebook.toml", ".codebook.toml", ".git")(vim.api.nvim_buf_get_name(bufnr)))

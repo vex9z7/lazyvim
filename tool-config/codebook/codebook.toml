@@ -1,0 +1,6 @@
+dictionaries = ["en_us"]
+
+words = [
+  "LazyVim",
+  "Neovim",
+]
