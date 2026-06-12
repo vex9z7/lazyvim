@@ -133,8 +133,9 @@ return {
     opts = function(_, opts)
       opts.formatters_by_ft = opts.formatters_by_ft or {}
 
-      -- Requires the Mason-managed black CLI formatter from lua/plugins/mason-tools.lua.
-      opts.formatters_by_ft.python = { "black" }
+      -- Run Ruff lint autofix before Ruff formatting on save.
+      -- Requires the Mason-managed Ruff CLI from lua/plugins/mason-tools.lua.
+      opts.formatters_by_ft.python = { "ruff_fix", "ruff_format" }
 
       -- Requires the Mason-managed eslint_d and prettierd CLI formatters from lua/plugins/mason-tools.lua.
       for _, ft in ipairs(js_filetypes) do
