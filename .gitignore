@@ -6,3 +6,5 @@ debug
 foo.*
 *.log
 data
+playgrounds/linter-eslint/node_modules/
+playgrounds/linter-eslint/package-lock.json

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint sample.js"
+  },
+  "devDependencies": {
+    "eslint": "^10.4.1"
+  }
+}

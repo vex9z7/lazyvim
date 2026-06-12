@@ -16,3 +16,5 @@ while experimenting; reset them with Git when they get messy.
   color values.
 - `markdown.md`: try rendered Markdown display and the `<leader>um` toggle.
 - `treesitter-context.tsx`: try sticky Treesitter context and the `<leader>ut` toggle.
+- `linter-eslint/`: try ESLint diagnostics, code actions, and save-time autofix
+  with a tiny project-local ESLint setup.
