@@ -118,17 +118,6 @@ end
 
 return {
   {
-    "mason-org/mason.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = opts.ensure_installed or {}
-      vim.list_extend(opts.ensure_installed, {
-        "black",
-        "eslint_d",
-        "prettierd",
-      })
-    end,
-  },
-  {
     "stevearc/conform.nvim",
     init = function()
       vim.api.nvim_create_autocmd("FileType", {
@@ -144,12 +133,15 @@ return {
     opts = function(_, opts)
       opts.formatters_by_ft = opts.formatters_by_ft or {}
 
+      -- Requires the Mason-managed black CLI formatter from lua/plugins/mason-tools.lua.
       opts.formatters_by_ft.python = { "black" }
 
+      -- Requires the Mason-managed eslint_d and prettierd CLI formatters from lua/plugins/mason-tools.lua.
       for _, ft in ipairs(js_filetypes) do
         opts.formatters_by_ft[ft] = { "eslint_d", "prettierd" }
       end
 
+      -- Requires the Mason-managed prettierd CLI formatter from lua/plugins/mason-tools.lua.
       for _, ft in ipairs(prettier_filetypes) do
         opts.formatters_by_ft[ft] = opts.formatters_by_ft[ft] or { "prettierd" }
       end
