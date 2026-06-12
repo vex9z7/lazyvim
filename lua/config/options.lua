@@ -45,3 +45,6 @@ vim.o.expandtab = true
 
 -- Configure explicit system clipboard integration across local, SSH, and tmux sessions.
 require "config.clipboard"
+
+-- Let conform handle save-time ESLint fixes while ESLint LSP provides diagnostics and code actions.
+vim.g.lazyvim_eslint_auto_format = false
