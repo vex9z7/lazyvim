@@ -45,3 +45,11 @@ vim.o.expandtab = true
 
 -- Configure explicit system clipboard integration across local, SSH, and tmux sessions.
 require "config.clipboard"
+
+-- Let conform handle save-time ESLint fixes while ESLint LSP provides diagnostics and code actions.
+vim.g.lazyvim_eslint_auto_format = false
+
+-- Use Pyright for Python language intelligence and Ruff LSP for diagnostics and code actions.
+-- Save-time Python lint autofix and formatting are handled by conform.nvim.
+vim.g.lazyvim_python_lsp = "pyright"
+vim.g.lazyvim_python_ruff = "ruff"

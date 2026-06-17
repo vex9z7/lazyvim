@@ -16,3 +16,9 @@ while experimenting; reset them with Git when they get messy.
   color values.
 - `markdown.md`: try rendered Markdown display and the `<leader>um` toggle.
 - `treesitter-context.tsx`: try sticky Treesitter context and the `<leader>ut` toggle.
+- `linter-eslint/`: try ESLint diagnostics, code actions, and save-time autofix
+  with a tiny project-local ESLint setup.
+- `linter-python/`: try Pyright/Ruff diagnostics, code actions, and Ruff
+  save-time fixes/formatting with a tiny `pyproject.toml` setup.
+- `spell-codebook/`: try Codebook spell diagnostics, quick fixes, and adding
+  project words to `codebook.toml`.
