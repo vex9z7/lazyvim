@@ -14,12 +14,19 @@ local function kind_rank(kind)
   return 40
 end
 
+local function preview_rank(action)
+  if action.edit then
+    return 0
+  end
+  return 1
+end
+
 local function action_rank(item)
   if item.action.disabled then
     return 90
   end
 
-  return kind_rank(item.action.kind)
+  return kind_rank(item.action.kind) + preview_rank(item.action)
 end
 
 return {
@@ -28,18 +35,28 @@ return {
     opts = function(_, opts)
       local keys = opts.servers["*"].keys
       for index = #keys, 1, -1 do
-        if keys[index][1] == "<leader>ca" then
+        local lhs = keys[index][1]
+        if lhs == "<leader>ca" or lhs == "<leader>cA" then
           table.remove(keys, index)
         end
       end
 
-      -- Use tiny-code-action for the normal code-action menu while keeping LazyVim source actions.
+      -- Use one code-action UI for both all actions and source-only actions.
       table.insert(keys, {
         "<leader>ca",
         function()
           require("tiny-code-action").code_action()
         end,
         desc = "Code Action",
+        mode = { "n", "x" },
+        has = "codeAction",
+      })
+      table.insert(keys, {
+        "<leader>cA",
+        function()
+          require("tiny-code-action").code_action { context = { only = { "source" } } }
+        end,
+        desc = "Source Action",
         mode = { "n", "x" },
         has = "codeAction",
       })
@@ -51,12 +68,9 @@ return {
     opts = {
       backend = "vim",
       picker = {
-        "buffer",
+        "snacks",
         opts = {
-          hotkeys = true,
-          hotkeys_mode = "text_diff_based",
-          auto_preview = true,
-          position = "cursor",
+          layout = "vertical",
         },
       },
       -- Prefer local fixes before file-level source actions in the code-action menu.
