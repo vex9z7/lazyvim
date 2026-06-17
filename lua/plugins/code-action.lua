@@ -22,34 +22,32 @@ local function action_rank(item)
   return kind_rank(item.action.kind)
 end
 
-local function set_code_action_keymap(buf)
-  vim.keymap.set({ "n", "x" }, "<leader>ca", function()
-    require("tiny-code-action").code_action()
-  end, { buffer = buf, desc = "Code Action" })
-end
-
 return {
+  {
+    "neovim/nvim-lspconfig",
+    opts = function(_, opts)
+      local keys = opts.servers["*"].keys
+      for index = #keys, 1, -1 do
+        if keys[index][1] == "<leader>ca" then
+          table.remove(keys, index)
+        end
+      end
+
+      -- Use tiny-code-action for the normal code-action menu while keeping LazyVim source actions.
+      table.insert(keys, {
+        "<leader>ca",
+        function()
+          require("tiny-code-action").code_action()
+        end,
+        desc = "Code Action",
+        mode = { "n", "x" },
+        has = "codeAction",
+      })
+    end,
+  },
   {
     "rachartier/tiny-code-action.nvim",
     event = "LspAttach",
-    init = function()
-      vim.api.nvim_create_autocmd("LspAttach", {
-        group = vim.api.nvim_create_augroup("tiny-code-action-keymaps", { clear = true }),
-        callback = function(event)
-          vim.schedule(function()
-            set_code_action_keymap(event.buf)
-          end)
-        end,
-      })
-
-      vim.schedule(function()
-        for _, client in ipairs(vim.lsp.get_clients()) do
-          for buf in pairs(client.attached_buffers or {}) do
-            set_code_action_keymap(buf)
-          end
-        end
-      end)
-    end,
     opts = {
       backend = "vim",
       picker = {
