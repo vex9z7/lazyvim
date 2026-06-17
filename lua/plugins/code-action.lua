@@ -67,12 +67,7 @@ return {
     event = "LspAttach",
     opts = {
       backend = "vim",
-      picker = {
-        "snacks",
-        opts = {
-          layout = "vertical",
-        },
-      },
+      picker = "snacks",
       -- Prefer local fixes before file-level source actions in the code-action menu.
       sort = function(a, b)
         local a_rank = action_rank(a)
