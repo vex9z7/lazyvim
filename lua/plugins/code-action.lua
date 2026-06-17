@@ -36,7 +36,9 @@ return {
       vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("tiny-code-action-keymaps", { clear = true }),
         callback = function(event)
-          set_code_action_keymap(event.buf)
+          vim.schedule(function()
+            set_code_action_keymap(event.buf)
+          end)
         end,
       })
 
