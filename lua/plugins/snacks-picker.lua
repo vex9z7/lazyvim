@@ -7,7 +7,7 @@ return {
           -- Use a Telescope-like layout when there is enough horizontal space:
           -- compact results/input on the left, preview as the main reading area on the right.
           preset = function()
-            return vim.o.columns >= 100 and "compact_preview" or "vertical"
+            return vim.o.columns >= 100 and "compact_preview" or "compact_preview_vertical"
           end,
         },
         layouts = {
@@ -17,7 +17,7 @@ return {
               box = "horizontal",
               backdrop = false,
               width = 0.96,
-              height = 0.86,
+              height = 0.92,
               border = "none",
               {
                 box = "vertical",
@@ -26,6 +26,19 @@ return {
                 { win = "input", height = 1, border = true, title = "{title} {live} {flags}", title_pos = "center" },
               },
               { win = "preview", title = "{preview:Preview}", title_pos = "center", border = true },
+            },
+          },
+          compact_preview_vertical = {
+            reverse = true,
+            layout = {
+              box = "vertical",
+              backdrop = false,
+              width = 0.96,
+              height = 0.92,
+              border = "none",
+              { win = "preview", title = "{preview:Preview}", title_pos = "center", border = true, height = 0.62 },
+              { win = "list", title = " Results ", title_pos = "center", border = true },
+              { win = "input", height = 1, border = true, title = "{title} {live} {flags}", title_pos = "center" },
             },
           },
         },
