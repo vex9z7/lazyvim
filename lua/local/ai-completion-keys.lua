@@ -13,8 +13,14 @@ end
 
 local function run_minuet(action)
   local ok, virtualtext = pcall(require, "minuet.virtualtext")
-  if not ok or not virtualtext.action.is_visible() then
+  if not ok or not virtualtext.action.is_active() then
     return false
+  end
+
+  -- Pending/status-only Minuet owns completion navigation keys, but there is no
+  -- candidate text to accept until the main suggestion extmark is visible.
+  if action == "accept" and not virtualtext.action.is_visible() then
+    return true
   end
 
   virtualtext.action[action]()
