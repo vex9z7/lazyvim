@@ -125,9 +125,9 @@ local llamacpp = {
   -- Keep AI ghost text responsive while still avoiding a request on every keypress.
   throttle = 1000,
   debounce = 300,
-  -- Match the mature inline-completion UX: show one best ghost-text suggestion
-  -- instead of making the user cycle through multiple AI alternatives.
-  n_completions = 1,
+  -- Ask the chat provider for a small set of alternatives; Minuet's next/prev
+  -- actions cycle through the returned ghost-text candidates.
+  n_completions = 3,
   -- Use a Copilot-like prompt budget for the local endpoint, where larger
   -- context is cheaper and the model/server can handle a wider window.
   context_window = 8192,
