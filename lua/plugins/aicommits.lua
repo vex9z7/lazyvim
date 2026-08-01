@@ -2,6 +2,10 @@ return {
   {
     "404pilo/aicommits.nvim",
     cmd = { "AICommit", "AICommitHealth", "AICommitDebug" },
+    config = function(_, opts)
+      require("local.aicommits-openai-extra-body").setup()
+      require("aicommits").setup(opts)
+    end,
     opts = {
       active_provider = "openai",
       providers = {
@@ -13,6 +17,11 @@ return {
           max_length = 72,
           max_tokens = 200,
           temperature = 0.3,
+          extra_body = {
+            chat_template_kwargs = {
+              enable_thinking = false,
+            },
+          },
         },
       },
       ui = {
