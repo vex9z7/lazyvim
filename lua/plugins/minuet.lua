@@ -187,7 +187,8 @@ local deepseek = vim.tbl_deep_extend("force", llamacpp, {
 
 return {
   {
-    "milanglacier/minuet-ai.nvim",
+    "vex9z7/minuet-ai.nvim",
+    branch = "feat/progressive-virtualtext-streaming",
     main = "minuet",
     event = "InsertEnter",
     opts = vim.tbl_deep_extend("force", llamacpp, {
