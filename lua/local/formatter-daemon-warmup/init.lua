@@ -2,10 +2,6 @@ local M = {}
 
 local DEFAULT_DELAY_MS = 100
 
-local function contains(list, value)
-  return vim.tbl_contains(list, value)
-end
-
 local function unique(list)
   local seen = {}
   local result = {}
@@ -18,46 +14,58 @@ local function unique(list)
   return result
 end
 
-local function dirname(path)
-  return vim.fs.dirname(path)
+local function default_stdin(file)
+  return table.concat(vim.fn.readfile(file), "\n")
 end
 
-local function package_root(path)
-  local package_json = vim.fs.find("package.json", { path = dirname(path), upward = true })[1]
-  return package_json and dirname(package_json) or nil
-end
-
-local function package_has_prettier(package_json)
-  local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(package_json), "\n"))
-  return ok and type(data) == "table" and data.prettier ~= nil
-end
-
-local function prettier_root(path, config_files)
-  return vim.fs.root(dirname(path), function(name, root)
-    if contains(config_files, name) then
-      return true
-    end
-
-    return name == "package.json" and package_has_prettier(vim.fs.joinpath(root, name))
-  end) or package_root(path)
-end
-
-local function warmup_daemon(state, tool, root, file, args)
-  local key = table.concat({ tool, root }, "::")
-  if state.warmed_daemons[key] then
+local function log(state, message)
+  if not state.opts.debug then
     return
   end
 
-  local command = vim.fn.exepath(tool)
+  state.opts.log(message)
+end
+
+local function daemon_supports_filetype(daemon, filetype)
+  return vim.tbl_contains(daemon.filetypes or {}, filetype)
+end
+
+local function warmup_daemon(state, daemon, file, bufnr)
+  if daemon.enabled == false then
+    return
+  end
+
+  local command = vim.fn.exepath(daemon.command or daemon.name)
   if command == "" then
+    log(state, string.format("skip %s: command not found", daemon.name))
+    return
+  end
+
+  if daemon.condition and not daemon.condition(file, bufnr) then
+    log(state, string.format("skip %s: condition failed", daemon.name))
+    return
+  end
+
+  local root = daemon.root and daemon.root(file, bufnr) or vim.fs.dirname(file)
+  if not root then
+    log(state, string.format("skip %s: root not found", daemon.name))
+    return
+  end
+
+  local key = table.concat({ daemon.name, root }, "::")
+  if state.warmed_daemons[key] then
+    log(state, string.format("skip %s: already warmed for %s", daemon.name, root))
     return
   end
   state.warmed_daemons[key] = true
 
-  local lines = vim.fn.readfile(file)
+  local args = daemon.args and daemon.args(file, bufnr, root) or {}
+  local stdin = daemon.stdin and daemon.stdin(file, bufnr, root) or default_stdin(file)
+
+  log(state, string.format("warm %s cwd=%s", daemon.name, root))
   vim.system(vim.list_extend({ command }, args), {
     cwd = root,
-    stdin = table.concat(lines, "\n"),
+    stdin = stdin,
     text = true,
   })
 end
@@ -72,46 +80,37 @@ local function warmup_formatters(state, args)
     return
   end
 
-  local ft = vim.bo[args.buf].filetype
-
-  if contains(state.opts.eslint_d.filetypes, ft) then
-    local root = package_root(file)
-    if root then
-      -- Start eslint_d before the first save so ESLint config and rules are loaded outside the write path.
-      warmup_daemon(state, "eslint_d", root, file, { "--fix-to-stdout", "--stdin", "--stdin-filename", file })
-    end
-  end
-
-  if contains(state.opts.prettierd.filetypes, ft) then
-    local root = prettier_root(file, state.opts.prettierd.config_files)
-    if root then
-      -- Start prettierd before the first save so Prettier config and plugins are loaded outside the write path.
-      warmup_daemon(state, "prettierd", root, file, { file })
+  local filetype = vim.bo[args.buf].filetype
+  for _, daemon in ipairs(state.opts.daemons) do
+    if daemon_supports_filetype(daemon, filetype) then
+      warmup_daemon(state, daemon, file, args.buf)
     end
   end
 end
 
 function M.setup(opts)
   opts = vim.tbl_deep_extend("force", {
+    debug = false,
     delay_ms = DEFAULT_DELAY_MS,
-    eslint_d = {
-      filetypes = {},
-    },
-    prettierd = {
-      filetypes = {},
-      config_files = {},
-    },
+    daemons = {},
+    log = function(message)
+      vim.notify(message, vim.log.levels.DEBUG, { title = "formatter-daemon-warmup" })
+    end,
   }, opts or {})
+
+  local patterns = {}
+  for _, daemon in ipairs(opts.daemons) do
+    vim.list_extend(patterns, daemon.filetypes or {})
+  end
+  patterns = unique(patterns)
+  if #patterns == 0 then
+    return
+  end
 
   local state = {
     opts = opts,
     warmed_daemons = {},
   }
-
-  local patterns = unique(vim.list_extend(vim.deepcopy(opts.eslint_d.filetypes), opts.prettierd.filetypes))
-  if #patterns == 0 then
-    return
-  end
 
   vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("formatter_daemon_warmup", { clear = true }),
