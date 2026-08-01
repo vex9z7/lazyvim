@@ -1,3 +1,84 @@
+local denied_buftypes = {
+  help = true,
+  prompt = true,
+  quickfix = true,
+  terminal = true,
+}
+
+local denied_filetypes = {
+  help = true,
+  lazy = true,
+  mason = true,
+  qf = true,
+}
+
+-- AI context exclusion patterns. These are path rules for files whose contents
+-- should not be sent to completion providers during automatic ghost text.
+local denied_path_patterns = {
+  -- Secrets and local credentials.
+  "/%.env$",
+  "/%.env%.",
+  "/%.aws/",
+  "/%.gnupg/",
+  "/%.kube/",
+  "/%.ssh/",
+  "/secret/",
+  "/secrets/",
+  "/%.secret/",
+  "/%.secrets/",
+  "/credentials[^/]*$",
+  "/secret%.[^/]+$",
+  "/secrets%.[^/]+$",
+  "%.key$",
+  "%.pem$",
+  "%.p12$",
+  "%.pfx$",
+
+  -- Generated or data-heavy files where inline AI completion is low value.
+  "/package%-lock%.json$",
+  "/pnpm%-lock%.yaml$",
+  "/yarn%.lock$",
+  "/cargo%.lock$",
+  "%.min%.css$",
+  "%.min%.js$",
+  "%.csv$",
+  "%.dump$",
+  "%.log$",
+}
+
+local function normalize_path(path)
+  return path:gsub("\\", "/"):lower()
+end
+
+local function path_matches_any(path, patterns)
+  local normalized = normalize_path(path)
+
+  for _, pattern in ipairs(patterns) do
+    if normalized:find(pattern) then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function ai_completion_allowed()
+  if denied_buftypes[vim.bo.buftype] or denied_filetypes[vim.bo.filetype] then
+    return false
+  end
+
+  if not vim.bo.modifiable then
+    return false
+  end
+
+  local path = vim.api.nvim_buf_get_name(0)
+  if path ~= "" and path_matches_any(path, denied_path_patterns) then
+    return false
+  end
+
+  return true
+end
+
 local ai_filetypes = {
   "css",
   "go",
@@ -26,6 +107,9 @@ local llamacpp = {
   -- Use a Copilot-like prompt budget for the local endpoint, where larger
   -- context is cheaper and the model/server can handle a wider window.
   context_window = 8192,
+  enable_predicates = {
+    ai_completion_allowed,
+  },
   virtualtext = {
     auto_trigger_ft = ai_filetypes,
     keymap = {
