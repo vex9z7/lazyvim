@@ -35,6 +35,14 @@ return {
         desc = "Restore Agentic session",
       },
       {
+        "<leader>ap",
+        function()
+          require("agentic").switch_provider()
+        end,
+        mode = { "n", "v" },
+        desc = "Switch Agentic provider",
+      },
+      {
         "<leader>ad",
         function()
           require("agentic").add_current_line_diagnostics()
