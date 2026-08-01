@@ -175,5 +175,9 @@ return {
         deepseek = deepseek,
       },
     }),
+    config = function(_, opts)
+      require("minuet").setup(opts)
+      require("local.minuet-context").setup()
+    end,
   },
 }
