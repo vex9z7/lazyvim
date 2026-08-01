@@ -2,15 +2,21 @@ return {
   {
     "YouSame2/inlinediff-nvim",
     cmd = "InlineDiff",
-    keys = {
-      {
-        "<leader>go",
-        function()
-          require("inlinediff").toggle()
+    init = function()
+      Snacks.toggle({
+        name = "Git Diff Overlay",
+        get = function()
+          local ok, inlinediff = pcall(require, "inlinediff")
+          return ok and inlinediff.enabled or false
         end,
-        desc = "Toggle Git Diff Overlay",
-      },
-    },
+        set = function(state)
+          local inlinediff = require "inlinediff"
+          if inlinediff.enabled ~= state then
+            inlinediff.toggle()
+          end
+        end,
+      }):map "<leader>go"
+    end,
     opts = {
       debounce_time = 200,
       ignored_buftype = { "terminal", "nofile" },
