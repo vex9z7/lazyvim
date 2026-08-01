@@ -92,6 +92,10 @@ local function warmup_daemon(tool, root, file, args)
 end
 
 local function warmup_formatter_daemons(args)
+  if not vim.api.nvim_buf_is_valid(args.buf) then
+    return
+  end
+
   local file = vim.api.nvim_buf_get_name(args.buf)
   if file == "" or vim.bo[args.buf].buftype ~= "" then
     return
@@ -132,6 +136,20 @@ return {
     end,
     opts = function(_, opts)
       opts.formatters_by_ft = opts.formatters_by_ft or {}
+      opts.formatters = opts.formatters or {}
+
+      -- Format fenced code blocks with safe formatters for snippets.
+      -- Do not run lint autofixers such as eslint_d inside Markdown examples.
+      opts.formatters.injected = {
+        options = {
+          lang_to_formatters = {
+            javascript = { "prettierd" },
+            typescript = { "prettierd" },
+            lua = { "stylua" },
+            python = { "ruff_format" },
+          },
+        },
+      }
 
       -- Run Ruff lint autofix before Ruff formatting on save.
       -- Requires the Mason-managed Ruff CLI from lua/plugins/mason-tools.lua.
