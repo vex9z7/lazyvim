@@ -95,6 +95,14 @@ local ai_filetypes = {
   "typescriptreact",
 }
 
+local function enable_current_buffer_auto_trigger()
+  -- Minuet sets this from a FileType autocmd, but this plugin lazy-loads on
+  -- InsertEnter, after the current buffer's FileType event has usually fired.
+  if vim.tbl_contains(ai_filetypes, vim.bo.filetype) then
+    vim.b.minuet_virtual_text_auto_trigger = true
+  end
+end
+
 local llamacpp = {
   provider = "openai_compatible",
   request_timeout = 3,
@@ -178,6 +186,7 @@ return {
     config = function(_, opts)
       require("minuet").setup(opts)
       require("local.minuet-context").setup()
+      enable_current_buffer_auto_trigger()
     end,
   },
 }
