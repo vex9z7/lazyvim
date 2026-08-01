@@ -16,7 +16,7 @@ return {
               inlinediff.toggle()
             end
           end,
-        }):map "<leader>go"
+        }):map "<leader>uo"
       end)
     end,
     opts = {
