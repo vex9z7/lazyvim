@@ -121,11 +121,7 @@ local llamacpp = {
   virtualtext = {
     auto_trigger_ft = ai_filetypes,
     keymap = {
-      -- Mirror Blink completion keys so both completion UIs share one muscle memory.
-      accept = "<C-y>",
-      dismiss = "<C-e>",
-      next = "<C-n>",
-      prev = "<C-p>",
+      -- Blink dispatches shared completion keys to Minuet when AI ghost text is visible.
     },
     show_on_completion_menu = false,
   },
