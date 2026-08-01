@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+
+# Agentic starts OpenCode in ACP mode via this wrapper. OpenCode's model
+# selection lives in host-local opencode config so credentials/endpoints stay
+# outside the portable Neovim config.
+exec opencode "$@"

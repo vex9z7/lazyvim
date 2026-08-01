@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+# Agentic's pi-acp adapter starts PI_ACP_PI_COMMAND with its own rpc args.
+# Keep Pi's Neovim agent surface narrow by default: read/search/list and
+# reviewable edit only. Provider/model can be overridden per machine.
+exec pi \
+  --provider "${PI_AGENTIC_PROVIDER:-llamacpp-stack}" \
+  --model "${PI_AGENTIC_MODEL:-unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M}" \
+  --tools "${PI_AGENTIC_TOOLS:-read,grep,find,ls,edit}" \
+  --no-context-files \
+  "$@"
