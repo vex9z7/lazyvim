@@ -1,0 +1,15 @@
+import { Callout } from "./components"
+
+# MDX Playground
+
+This file checks whether `.mdx` buffers get the `mdx` filetype and keep Markdown plus JSX-like content readable.
+
+<Callout type="info">
+  MDX lets prose and components live in the same document.
+</Callout>
+
+```tsx
+export function Example() {
+  return <Callout type="success">Rendered from MDX</Callout>
+}
+```
