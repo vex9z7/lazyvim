@@ -124,6 +124,29 @@ return {
   {
     "stevearc/conform.nvim",
     init = function()
+      local function register_conform_formatter()
+        require("lazyvim.util").format.register {
+          name = "conform.nvim",
+          priority = 100,
+          primary = true,
+          format = function(bufnr)
+            require("conform").format { bufnr = bufnr }
+          end,
+          sources = function(bufnr)
+            local formatters = require("conform").list_formatters(bufnr)
+            return vim.tbl_map(function(formatter)
+              return formatter.name
+            end, formatters)
+          end,
+        }
+      end
+
+      if vim.g.did_very_lazy then
+        register_conform_formatter()
+      else
+        require("lazyvim.util").on_very_lazy(register_conform_formatter)
+      end
+
       vim.api.nvim_create_autocmd("FileType", {
         group = vim.api.nvim_create_augroup("formatter_daemon_warmup", { clear = true }),
         pattern = vim.list_extend(vim.deepcopy(js_filetypes), prettier_filetypes),
