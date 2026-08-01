@@ -11,15 +11,31 @@ local function feed_fallback(key)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, true, true), "n", false)
 end
 
+local function minuet_is_active(virtualtext)
+  if type(virtualtext.action.is_active) == "function" then
+    return virtualtext.action.is_active()
+  end
+
+  return virtualtext.action.is_visible()
+end
+
+local function minuet_has_suggestion(virtualtext)
+  if type(virtualtext.action.has_suggestion) == "function" then
+    return virtualtext.action.has_suggestion()
+  end
+
+  return virtualtext.action.is_visible()
+end
+
 local function run_minuet(action)
   local ok, virtualtext = pcall(require, "minuet.virtualtext")
-  if not ok or not virtualtext.action.is_active() then
+  if not ok or not minuet_is_active(virtualtext) then
     return false
   end
 
-  -- Pending/status-only Minuet owns completion navigation keys, but there is no
-  -- candidate text to accept until the main suggestion extmark is visible.
-  if action == "accept" and not virtualtext.action.has_suggestion() then
+  -- Some Minuet forks expose a pending/status-only state before candidate text
+  -- exists. Accept only when the active virtual text contains a real suggestion.
+  if action == "accept" and not minuet_has_suggestion(virtualtext) then
     return true
   end
 
