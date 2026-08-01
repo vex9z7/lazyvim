@@ -19,9 +19,15 @@ return {
       -- Show function signatures while typing call arguments.
       opts.signature = vim.tbl_deep_extend("force", opts.signature or {}, { enabled = true })
     end,
-    config = function(_, opts)
-      require("blink.cmp").setup(opts)
-      require("local.ai-completion-keys").setup()
+    init = function()
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyLoad",
+        callback = function(event)
+          if event.data == "blink.cmp" then
+            require("local.ai-completion-keys").setup()
+          end
+        end,
+      })
     end,
   },
 }
