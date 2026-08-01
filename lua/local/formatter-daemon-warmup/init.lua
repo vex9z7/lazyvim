@@ -1,5 +1,7 @@
 local M = {}
 
+local defaults = require "local.formatter-daemon-warmup.defaults"
+
 local DEFAULT_DELAY_MS = 100
 
 local function unique(list)
@@ -89,14 +91,17 @@ local function warmup_formatters(state, args)
 end
 
 function M.setup(opts)
+  opts = opts or {}
+  local daemons = opts.daemons or defaults.daemons()
+
   opts = vim.tbl_deep_extend("force", {
     debug = false,
     delay_ms = DEFAULT_DELAY_MS,
-    daemons = {},
     log = function(message)
       vim.notify(message, vim.log.levels.DEBUG, { title = "formatter-daemon-warmup" })
     end,
-  }, opts or {})
+  }, opts)
+  opts.daemons = daemons
 
   local patterns = {}
   for _, daemon in ipairs(opts.daemons) do
