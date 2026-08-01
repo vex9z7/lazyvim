@@ -62,6 +62,25 @@ local function path_matches_any(path, patterns)
   return false
 end
 
+local function has_completion_context()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local row = cursor[1] - 1
+  local col = cursor[2]
+  local line_count = vim.api.nvim_buf_line_count(0)
+
+  local before_start = math.max(row - 20, 0)
+  local after_end = math.min(row + 21, line_count)
+  local before_lines = vim.api.nvim_buf_get_lines(0, before_start, row, false)
+  local after_lines = vim.api.nvim_buf_get_lines(0, row + 1, after_end, false)
+  local current = vim.api.nvim_get_current_line()
+
+  table.insert(before_lines, current:sub(1, col))
+  table.insert(after_lines, 1, current:sub(col + 1))
+
+  local context = table.concat(before_lines, "\n") .. table.concat(after_lines, "\n")
+  return context:find "%S" ~= nil
+end
+
 local function ai_completion_allowed()
   if denied_buftypes[vim.bo.buftype] or denied_filetypes[vim.bo.filetype] then
     return false
@@ -133,6 +152,7 @@ local llamacpp = {
   context_window = 8192,
   enable_predicates = {
     ai_completion_allowed,
+    has_completion_context,
   },
   virtualtext = {
     auto_trigger_ft = ai_filetypes,
