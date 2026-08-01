@@ -164,6 +164,11 @@ return {
       for _, ft in ipairs(prettier_filetypes) do
         opts.formatters_by_ft[ft] = opts.formatters_by_ft[ft] or { "prettierd" }
       end
+
+      -- Format fenced code blocks on save for prose documents.
+      opts.formatters_by_ft.markdown = { "prettierd", "injected" }
+      opts.formatters_by_ft["markdown.mdx"] = { "prettierd", "injected" }
+      opts.formatters_by_ft.mdx = { "prettierd", "injected" }
     end,
   },
 }
