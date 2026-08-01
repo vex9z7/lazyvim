@@ -1,47 +1,6 @@
-local js_filetypes = {
-  "javascript",
-  "javascriptreact",
-  "typescript",
-  "typescriptreact",
-}
+local M = {}
 
-local prettier_filetypes = {
-  "css",
-  "graphql",
-  "javascript",
-  "javascriptreact",
-  "json",
-  "jsonc",
-  "less",
-  "markdown",
-  "markdown.mdx",
-  "mdx",
-  "typescript",
-  "typescriptreact",
-}
-
-local prettier_config_files = {
-  ".prettierrc",
-  ".prettierrc.json",
-  ".prettierrc.yml",
-  ".prettierrc.yaml",
-  ".prettierrc.json5",
-  ".prettierrc.js",
-  ".prettierrc.cjs",
-  ".prettierrc.mjs",
-  ".prettierrc.ts",
-  ".prettierrc.cts",
-  ".prettierrc.mts",
-  ".prettierrc.toml",
-  "prettier.config.js",
-  "prettier.config.cjs",
-  "prettier.config.mjs",
-  "prettier.config.ts",
-  "prettier.config.cts",
-  "prettier.config.mts",
-}
-
-local warmed_daemons = {}
+local DEFAULT_DELAY_MS = 100
 
 local function contains(list, value)
   return vim.tbl_contains(list, value)
@@ -73,9 +32,9 @@ local function package_has_prettier(package_json)
   return ok and type(data) == "table" and data.prettier ~= nil
 end
 
-local function prettier_root(path)
+local function prettier_root(path, config_files)
   return vim.fs.root(dirname(path), function(name, root)
-    if contains(prettier_config_files, name) then
+    if contains(config_files, name) then
       return true
     end
 
@@ -83,9 +42,9 @@ local function prettier_root(path)
   end) or package_root(path)
 end
 
-local function warmup_daemon(tool, root, file, args)
+local function warmup_daemon(state, tool, root, file, args)
   local key = table.concat({ tool, root }, "::")
-  if warmed_daemons[key] then
+  if state.warmed_daemons[key] then
     return
   end
 
@@ -93,7 +52,7 @@ local function warmup_daemon(tool, root, file, args)
   if command == "" then
     return
   end
-  warmed_daemons[key] = true
+  state.warmed_daemons[key] = true
 
   local lines = vim.fn.readfile(file)
   vim.system(vim.list_extend({ command }, args), {
@@ -103,7 +62,7 @@ local function warmup_daemon(tool, root, file, args)
   })
 end
 
-local function warmup_formatter_daemons(args)
+local function warmup_formatters(state, args)
   if not vim.api.nvim_buf_is_valid(args.buf) then
     return
   end
@@ -115,29 +74,54 @@ local function warmup_formatter_daemons(args)
 
   local ft = vim.bo[args.buf].filetype
 
-  if contains(js_filetypes, ft) then
+  if contains(state.opts.eslint_d.filetypes, ft) then
     local root = package_root(file)
     if root then
       -- Start eslint_d before the first save so ESLint config and rules are loaded outside the write path.
-      warmup_daemon("eslint_d", root, file, { "--fix-to-stdout", "--stdin", "--stdin-filename", file })
+      warmup_daemon(state, "eslint_d", root, file, { "--fix-to-stdout", "--stdin", "--stdin-filename", file })
     end
   end
 
-  if contains(prettier_filetypes, ft) then
-    local root = prettier_root(file)
+  if contains(state.opts.prettierd.filetypes, ft) then
+    local root = prettier_root(file, state.opts.prettierd.config_files)
     if root then
       -- Start prettierd before the first save so Prettier config and plugins are loaded outside the write path.
-      warmup_daemon("prettierd", root, file, { file })
+      warmup_daemon(state, "prettierd", root, file, { file })
     end
   end
 end
 
-vim.api.nvim_create_autocmd("FileType", {
-  group = vim.api.nvim_create_augroup("formatter_daemon_warmup", { clear = true }),
-  pattern = unique(vim.list_extend(vim.deepcopy(js_filetypes), prettier_filetypes)),
-  callback = function(args)
-    vim.defer_fn(function()
-      warmup_formatter_daemons(args)
-    end, 100)
-  end,
-})
+function M.setup(opts)
+  opts = vim.tbl_deep_extend("force", {
+    delay_ms = DEFAULT_DELAY_MS,
+    eslint_d = {
+      filetypes = {},
+    },
+    prettierd = {
+      filetypes = {},
+      config_files = {},
+    },
+  }, opts or {})
+
+  local state = {
+    opts = opts,
+    warmed_daemons = {},
+  }
+
+  local patterns = unique(vim.list_extend(vim.deepcopy(opts.eslint_d.filetypes), opts.prettierd.filetypes))
+  if #patterns == 0 then
+    return
+  end
+
+  vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("formatter_daemon_warmup", { clear = true }),
+    pattern = patterns,
+    callback = function(args)
+      vim.defer_fn(function()
+        warmup_formatters(state, args)
+      end, opts.delay_ms)
+    end,
+  })
+end
+
+return M
