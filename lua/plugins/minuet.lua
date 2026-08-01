@@ -79,6 +79,22 @@ local function ai_completion_allowed()
   return true
 end
 
+local copilot_like_system = {
+  template = "{{{prompt}}}\n{{{guidelines}}}\n{{{n_completion_template}}}",
+  prompt = [[
+You are an inline code completion engine. Given code before and after the cursor, return only the text that should be inserted at the cursor.
+]],
+  guidelines = [[
+Guidelines:
+1. Return completion text directly; do not include markdown fences or explanations.
+2. Preserve the user's indentation, whitespace style, and surrounding syntax.
+3. Prefer completing the current expression, statement, block, or function when the context clearly calls for it.
+4. Multi-line completions are allowed when they naturally finish the current block.
+5. Do not repeat code that already appears before or after the cursor.
+6. Stop before duplicating the suffix after the cursor.]],
+  n_completion_template = "7. Provide at most %d completion item.",
+}
+
 local ai_filetypes = {
   "css",
   "go",
@@ -105,7 +121,7 @@ end
 
 local llamacpp = {
   provider = "openai_compatible",
-  request_timeout = 3,
+  request_timeout = 8,
   -- Keep AI ghost text responsive while still avoiding a request on every keypress.
   throttle = 1000,
   debounce = 300,
@@ -128,6 +144,7 @@ local llamacpp = {
   provider_options = {
     openai_compatible = {
       name = "llama.cpp",
+      system = copilot_like_system,
       api_key = function()
         return vim.env.LLAMACPP_API_KEY or "local"
       end,
