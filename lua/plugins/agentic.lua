@@ -60,7 +60,7 @@ return {
       },
     },
     opts = {
-      provider = "pi-acp",
+      provider = "opencode-acp",
       acp_providers = {
         ["pi-acp"] = {
           name = "Pi ACP",
