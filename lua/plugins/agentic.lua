@@ -61,28 +61,8 @@ return {
     },
     opts = {
       provider = "opencode-acp",
-      acp_providers = {
-        ["pi-acp"] = {
-          name = "Pi ACP",
-          command = "pi-acp",
-          env = {
-            PI_ACP_PI_COMMAND = vim.fn.stdpath "config" .. "/bin/pi-agentic",
-          },
-        },
-        ["opencode-acp"] = {
-          name = "OpenCode ACP",
-          command = vim.fn.stdpath "config" .. "/bin/opencode-agentic",
-          args = { "acp" },
-          env = {},
-        },
-      },
       diff_preview = {
-        enabled = true,
         layout = "inline",
-      },
-      windows = {
-        position = "right",
-        width = "38%",
       },
     },
   },
