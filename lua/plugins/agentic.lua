@@ -13,7 +13,7 @@ return {
       {
         "<leader>ac",
         function()
-          require("local.agentic").pick_context()
+          require("plugins.agentic.context").pick()
         end,
         mode = "n",
         desc = "Pick Agentic context action",
@@ -29,7 +29,7 @@ return {
       {
         "<leader>as",
         function()
-          require("local.agentic").pick_session()
+          require("plugins.agentic.sessions").pick()
         end,
         mode = { "n", "v" },
         desc = "Pick Agentic session",
