@@ -1,45 +1,24 @@
--- Small adapter used by blink.cmp keymaps. Blink owns the insert-mode
--- completion keys; this module only gives Minuet virtual text the first chance
--- to handle accept/dismiss/next/prev when AI ghost text is active.
+-- Adapter used by blink.cmp keymaps. Blink owns the insert-mode completion
+-- keys; Minuet gets first chance only when AI virtual text is pending or shown.
 local M = {}
 
-local function virtualtext()
-  local ok, vt = pcall(require, "minuet.virtualtext")
-  if ok then
-    return vt
-  end
+local function action()
+  return require("minuet.virtualtext").action
 end
 
-local function is_active(vt)
-  if type(vt.action.is_active) == "function" then
-    return vt.action.is_active()
-  end
-
-  return vt.action.is_visible()
-end
-
-local function has_suggestion(vt)
-  if type(vt.action.has_suggestion) == "function" then
-    return vt.action.has_suggestion()
-  end
-
-  return vt.action.is_visible()
-end
-
-local function run(action)
-  local vt = virtualtext()
-  if not vt or not is_active(vt) then
+local function run(name)
+  local minuet = action()
+  if not minuet.is_active() then
     return false
   end
 
-  -- Minuet can be active while only a pending/status line is visible. Treat an
-  -- accept attempt during that state as handled so it does not accept a Blink
-  -- item by accident.
-  if action == "accept" and not has_suggestion(vt) then
+  -- When only the pending/status line is visible, consume accept so Blink does
+  -- not accept a completion item before Minuet has produced text.
+  if name == "accept" and not minuet.has_suggestion() then
     return true
   end
 
-  vt.action[action]()
+  minuet[name]()
   return true
 end
 
