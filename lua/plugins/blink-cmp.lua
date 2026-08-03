@@ -47,8 +47,7 @@ return {
         },
       },
       signature = {
-        -- Show function signatures while typing call arguments.
-        enabled = true,
+        enabled = false,
       },
     },
   },
