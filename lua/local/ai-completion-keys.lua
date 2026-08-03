@@ -52,6 +52,23 @@ local function run_blink(action)
   return blink[action]() == true
 end
 
+local function should_skip_buffer(bufnr)
+  local buftype = vim.bo[bufnr].buftype
+  if buftype == "prompt" or buftype == "terminal" then
+    return true
+  end
+
+  local filetype = vim.bo[bufnr].filetype
+  return filetype:match "^snacks_picker" ~= nil
+end
+
+local function clear_ai_key(bufnr, key)
+  local mapping = vim.fn.maparg(key, "i", false, true)
+  if mapping.buffer == 1 and mapping.desc and mapping.desc:match "^AI%-aware completion" then
+    pcall(vim.keymap.del, "i", key, { buffer = bufnr })
+  end
+end
+
 local function map_key(bufnr, key, actions)
   vim.keymap.set("i", key, function()
     if run_minuet(actions.minuet) or run_blink(actions.blink) then
@@ -68,6 +85,13 @@ end
 
 function M.apply(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
+
+  if should_skip_buffer(bufnr) then
+    for key in pairs(keys) do
+      clear_ai_key(bufnr, key)
+    end
+    return
+  end
 
   for key, actions in pairs(keys) do
     map_key(bufnr, key, actions)
