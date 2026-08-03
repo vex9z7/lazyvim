@@ -1,3 +1,13 @@
+local function no_preview_picker_source()
+  return {
+    layout = { preset = "compact_no_preview" },
+    preview = "none",
+    main = { current = false },
+    matcher = { sort_empty = false },
+    sort = { fields = { "idx" } },
+  }
+end
+
 return {
   {
     "folke/snacks.nvim",
@@ -55,20 +65,12 @@ return {
           },
         },
         sources = {
-          agentic_context_actions = {
-            layout = { preset = "compact_no_preview" },
-            preview = "none",
-            main = { current = false },
-            matcher = { sort_empty = false },
-            sort = { fields = { "idx" } },
-          },
-          agentic_sessions = {
-            layout = { preset = "compact_no_preview" },
-            preview = "none",
-            main = { current = false },
-            matcher = { sort_empty = false },
-            sort = { fields = { "idx" } },
-          },
+          -- vim.ui.select uses Snacks' `select` source. Keep it visually aligned
+          -- with custom action/session pickers so plugin integrations using the
+          -- default select UI do not need their own layout overrides.
+          select = no_preview_picker_source(),
+          agentic_context_actions = no_preview_picker_source(),
+          agentic_sessions = no_preview_picker_source(),
         },
       },
     },
