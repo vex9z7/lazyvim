@@ -53,12 +53,6 @@ return {
     },
     opts = {
       provider = "opencode-acp",
-      acp_providers = {
-        ["codex-acp"] = {
-          name = "Codex ACP",
-          command = "dotnvim-disabled-codex-acp",
-        },
-      },
       diff_preview = {
         layout = "inline",
       },
