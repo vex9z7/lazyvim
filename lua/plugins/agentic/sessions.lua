@@ -40,7 +40,16 @@ function M.pick()
         end
 
         vim.schedule(function()
-          require("plugins.agentic.select").pick(items, "Agentic Sessions")
+          vim.ui.select(items, {
+            prompt = "Agentic Sessions",
+            format_item = function(item)
+              return item.label
+            end,
+          }, function(item)
+            if item and item.run then
+              item.run()
+            end
+          end)
         end)
       end)
     end)

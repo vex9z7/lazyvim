@@ -54,7 +54,16 @@ local function items(agentic)
 end
 
 function M.pick()
-  require("plugins.agentic.select").pick(items(require "agentic"), "Agentic Context")
+  vim.ui.select(items(require "agentic"), {
+    prompt = "Agentic Context",
+    format_item = function(item)
+      return item.label
+    end,
+  }, function(item)
+    if item and item.run then
+      item.run()
+    end
+  end)
 end
 
 return M
