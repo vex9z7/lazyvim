@@ -1,3 +1,6 @@
+-- Default daemon definitions for formatter-daemon-warmup. Keep filetype lists,
+-- config-file discovery, and daemon-specific commands here so the plugin setup
+-- can override policy without duplicating common defaults.
 local M = {}
 
 local js_filetypes = {
