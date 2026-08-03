@@ -42,42 +42,6 @@ local function pick_items(opts)
       return opts.items
     end,
     format = "text",
-    preview = "none",
-    layout = {
-      reverse = true,
-      layout = {
-        box = "vertical",
-        backdrop = false,
-        width = 0.96,
-        height = 0.7,
-        border = "none",
-        { win = "list", title = opts.list_title, title_pos = "center", border = true },
-        { win = "input", height = 1, border = true, title = "{title} {live} {flags}", title_pos = "center" },
-      },
-    },
-    main = {
-      current = false,
-    },
-    sort = {
-      fields = { "idx" },
-    },
-    matcher = {
-      sort_empty = false,
-    },
-    win = {
-      input = {
-        keys = {
-          ["<C-n>"] = { "list_down", mode = { "i", "n" } },
-          ["<C-p>"] = { "list_up", mode = { "i", "n" } },
-        },
-      },
-      list = {
-        keys = {
-          ["<C-n>"] = "list_down",
-          ["<C-p>"] = "list_up",
-        },
-      },
-    },
     confirm = function(picker, item)
       picker:close()
       if item and item.run then
@@ -151,7 +115,6 @@ function M.pick_context()
   pick_items {
     source = "agentic_context_actions",
     title = "Agentic Context",
-    list_title = " Context ",
     items = context_items(agentic),
   }
 end
@@ -177,7 +140,6 @@ function M.pick_session()
           pick_items {
             source = "agentic_sessions",
             title = "Agentic Sessions",
-            list_title = " Sessions ",
             items = items,
           }
         end)
