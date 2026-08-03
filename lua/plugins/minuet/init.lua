@@ -18,6 +18,7 @@ local denied_path_patterns = {
   -- Secrets and local credentials.
   "/%.env$",
   "/%.env%.",
+  "%.env$",
   "/%.aws/",
   "/%.gnupg/",
   "/%.kube/",
