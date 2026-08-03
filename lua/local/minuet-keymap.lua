@@ -1,3 +1,6 @@
+-- Small adapter used by blink.cmp keymaps. Blink owns the insert-mode
+-- completion keys; this module only gives Minuet virtual text the first chance
+-- to handle accept/dismiss/next/prev when AI ghost text is active.
 local M = {}
 
 local function virtualtext()

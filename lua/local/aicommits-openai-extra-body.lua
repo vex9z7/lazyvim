@@ -1,3 +1,7 @@
+-- Patch aicommits.nvim's OpenAI provider to support extra top-level request
+-- body fields. This keeps the user-facing commit-message workflow in
+-- aicommits.nvim while allowing OpenAI-compatible local endpoints to receive
+-- provider-specific options.
 local M = {}
 
 local patched = false

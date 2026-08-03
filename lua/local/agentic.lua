@@ -1,3 +1,6 @@
+-- Local Agentic UI helpers. These functions keep small Snacks picker wrappers
+-- near Agentic's plugin-specific config while delegating actual session/context
+-- behavior to Agentic's native public APIs.
 local M = {}
 
 local function session_label(session_info)

@@ -1,3 +1,7 @@
+-- Warm up formatter daemons such as prettierd and eslint_d after a matching
+-- buffer is opened. The first real format/lint request is often slower because
+-- the daemon has to start; this local plugin starts it in the background and
+-- keeps the conform.nvim config focused on formatter selection.
 local M = {}
 
 local defaults = require "local.formatter-daemon-warmup.defaults"
