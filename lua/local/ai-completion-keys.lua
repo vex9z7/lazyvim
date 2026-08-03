@@ -63,9 +63,11 @@ local function should_skip_buffer(bufnr)
 end
 
 local function clear_ai_key(bufnr, key)
-  local mapping = vim.fn.maparg(key, "i", false, true)
-  if mapping.buffer == 1 and mapping.desc and mapping.desc:match "^AI%-aware completion" then
-    pcall(vim.keymap.del, "i", key, { buffer = bufnr })
+  for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "i")) do
+    if mapping.lhs == key and mapping.desc and mapping.desc:match "^AI%-aware completion" then
+      pcall(vim.keymap.del, "i", key, { buffer = bufnr })
+      return
+    end
   end
 end
 
