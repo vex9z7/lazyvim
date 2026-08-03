@@ -62,9 +62,13 @@ local function should_skip_buffer(bufnr)
   return filetype:match "^snacks_picker" ~= nil
 end
 
+local function key_matches(lhs, key)
+  return lhs:lower() == key:lower()
+end
+
 local function clear_ai_key(bufnr, key)
   for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "i")) do
-    if mapping.lhs == key and mapping.desc and mapping.desc:match "^AI%-aware completion" then
+    if key_matches(mapping.lhs, key) and mapping.desc and mapping.desc:match "^AI%-aware completion" then
       pcall(vim.keymap.del, "i", key, { buffer = bufnr })
       return
     end
