@@ -3,7 +3,7 @@ return {
     "404pilo/aicommits.nvim",
     cmd = { "AICommit", "AICommitHealth", "AICommitDebug" },
     config = function(_, opts)
-      require("local.aicommits-openai-extra-body").setup()
+      require("plugins.aicommits.openai_extra_body").setup()
       require("aicommits").setup(opts)
     end,
     opts = {
