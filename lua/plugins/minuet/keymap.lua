@@ -1,5 +1,6 @@
--- Adapter used by blink.cmp keymaps. Blink owns the insert-mode completion
--- keys; Minuet gets first chance only when AI virtual text is pending or shown.
+-- Config-local adapter for the pinned Minuet fork. Blink owns the insert-mode
+-- completion keys; Minuet gets first chance only when AI virtual text is pending
+-- or shown.
 local M = {}
 
 local function action()

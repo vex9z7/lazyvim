@@ -19,28 +19,28 @@ return {
       keymap = {
         ["<C-y>"] = {
           function()
-            return require("local.minuet-keymap").accept()
+            return require("plugins.minuet.keymap").accept()
           end,
           "select_and_accept",
           "fallback",
         },
         ["<C-e>"] = {
           function()
-            return require("local.minuet-keymap").dismiss()
+            return require("plugins.minuet.keymap").dismiss()
           end,
           "cancel",
           "fallback",
         },
         ["<C-n>"] = {
           function()
-            return require("local.minuet-keymap").next()
+            return require("plugins.minuet.keymap").next()
           end,
           "select_next",
           "fallback_to_mappings",
         },
         ["<C-p>"] = {
           function()
-            return require("local.minuet-keymap").prev()
+            return require("plugins.minuet.keymap").prev()
           end,
           "select_prev",
           "fallback_to_mappings",

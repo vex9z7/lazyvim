@@ -1,7 +1,6 @@
--- Override Minuet's context builder so automatic inline completion sends only
--- cursor-near prefix/suffix text. This keeps large buffers responsive and
--- avoids reading or serializing the entire buffer before each completion
--- request.
+-- Config-local Minuet adapter, not upstream Minuet code. Override Minuet's
+-- context builder so automatic inline completion sends only cursor-near
+-- prefix/suffix text instead of reading or serializing the whole buffer.
 local M = {}
 
 local function char_count(text)

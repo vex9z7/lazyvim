@@ -219,7 +219,7 @@ return {
     }),
     config = function(_, opts)
       require("minuet").setup(opts)
-      require("local.minuet-context").setup()
+      require("plugins.minuet.context").setup()
       enable_current_buffer_auto_trigger()
     end,
   },
