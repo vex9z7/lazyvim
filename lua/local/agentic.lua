@@ -84,7 +84,7 @@ local function pick_items(items)
   }
 end
 
-function M.pick()
+function M.pick_session()
   local agentic = require "agentic"
   local SessionRegistry = require "agentic.session_registry"
 

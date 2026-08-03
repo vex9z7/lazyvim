@@ -21,7 +21,7 @@ return {
       {
         "<leader>as",
         function()
-          require("local.agentic-sessions").pick()
+          require("local.agentic").pick_session()
         end,
         mode = { "n", "v" },
         desc = "Pick Agentic session",
