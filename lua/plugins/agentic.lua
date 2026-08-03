@@ -11,12 +11,20 @@ return {
         desc = "Toggle Agentic chat",
       },
       {
-        "<leader>aA",
+        "<leader>ac",
+        function()
+          require("local.agentic").pick_context()
+        end,
+        mode = "n",
+        desc = "Pick Agentic context action",
+      },
+      {
+        "<leader>ac",
         function()
           require("agentic").add_selection_or_file_to_context()
         end,
-        mode = { "n", "v" },
-        desc = "Add file/selection to Agentic",
+        mode = "v",
+        desc = "Add selection to Agentic",
       },
       {
         "<leader>as",
@@ -33,22 +41,6 @@ return {
         end,
         mode = { "n", "v" },
         desc = "Switch Agentic provider",
-      },
-      {
-        "<leader>ad",
-        function()
-          require("agentic").add_current_line_diagnostics()
-        end,
-        mode = "n",
-        desc = "Add line diagnostics to Agentic",
-      },
-      {
-        "<leader>aD",
-        function()
-          require("agentic").add_buffer_diagnostics()
-        end,
-        mode = "n",
-        desc = "Add buffer diagnostics to Agentic",
       },
     },
     opts = {
