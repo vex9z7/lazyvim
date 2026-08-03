@@ -69,8 +69,6 @@ return {
           -- with custom action/session pickers so plugin integrations using the
           -- default select UI do not need their own layout overrides.
           select = no_preview_picker_source(),
-          agentic_context_actions = no_preview_picker_source(),
-          agentic_sessions = no_preview_picker_source(),
         },
       },
     },

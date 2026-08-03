@@ -1,54 +1,18 @@
--- Local Agentic UI helpers. These functions keep small Snacks picker wrappers
--- near Agentic's plugin-specific config while delegating actual session/context
--- behavior to Agentic's native public APIs.
+-- Local Agentic UI helpers. Keep picker-independent action/session wiring here
+-- and let vim.ui.select provide the shared picker UI.
 local M = {}
 
-local function session_label(session_info)
-  local updated_at = session_info.updatedAt and session_info.updatedAt:sub(1, 16):gsub("T", " ") or "unknown date"
-  local title = session_info.title or "(no title)"
-
-  return string.format("%s - %s", updated_at, title), updated_at, title
-end
-
-local function new_session_item(agentic)
-  return {
-    idx = 1,
-    text = "New session",
-    run = function()
-      agentic.new_session()
+local function select_item(items, opts)
+  vim.ui.select(items, {
+    prompt = opts.prompt,
+    format_item = function(item)
+      return item.label
     end,
-  }
-end
-
-local function restore_session_item(index, session, session_info)
-  local text, updated_at, title = session_label(session_info)
-  local session_id = session_info.sessionId
-
-  return {
-    idx = index,
-    text = text,
-    run = function()
-      session:load_acp_session(session_id, title, updated_at)
-      session.widget:show()
-    end,
-  }
-end
-
-local function pick_items(opts)
-  Snacks.picker.pick {
-    source = opts.source,
-    title = opts.title,
-    finder = function()
-      return opts.items
-    end,
-    format = "text",
-    confirm = function(picker, item)
-      picker:close()
-      if item and item.run then
-        vim.schedule(item.run)
-      end
-    end,
-  }
+  }, function(item)
+    if item and item.run then
+      item.run()
+    end
+  end)
 end
 
 local function current_file_buffers()
@@ -67,36 +31,31 @@ end
 local function context_items(agentic)
   return {
     {
-      idx = 1,
-      text = "Add selection or current file",
+      label = "Add selection or current file",
       run = function()
         agentic.add_selection_or_file_to_context()
       end,
     },
     {
-      idx = 2,
-      text = "Add diagnostics at cursor line",
+      label = "Add diagnostics at cursor line",
       run = function()
         agentic.add_current_line_diagnostics()
       end,
     },
     {
-      idx = 3,
-      text = "Add all diagnostics from current buffer",
+      label = "Add all diagnostics from current buffer",
       run = function()
         agentic.add_buffer_diagnostics()
       end,
     },
     {
-      idx = 4,
-      text = "Add current file",
+      label = "Add current file",
       run = function()
         agentic.add_file()
       end,
     },
     {
-      idx = 5,
-      text = "Add all listed file buffers",
+      label = "Add all listed file buffers",
       run = function()
         local files = current_file_buffers()
         if #files == 0 then
@@ -109,14 +68,15 @@ local function context_items(agentic)
   }
 end
 
-function M.pick_context()
-  local agentic = require "agentic"
+local function session_label(session_info)
+  local updated_at = session_info.updatedAt and session_info.updatedAt:sub(1, 16):gsub("T", " ") or "unknown date"
+  local title = session_info.title or "(no title)"
 
-  pick_items {
-    source = "agentic_context_actions",
-    title = "Agentic Context",
-    items = context_items(agentic),
-  }
+  return string.format("%s - %s", updated_at, title), updated_at, title
+end
+
+function M.pick_context()
+  select_item(context_items(require "agentic"), { prompt = "Agentic Context" })
 end
 
 function M.pick_session()
@@ -126,22 +86,33 @@ function M.pick_session()
   SessionRegistry.get_session_for_tab_page(nil, function(session)
     session.agent:when_ready(function()
       session.agent:list_sessions(vim.fn.getcwd(), function(result, err)
-        local items = { new_session_item(agentic) }
+        local items = {
+          {
+            label = "New session",
+            run = function()
+              agentic.new_session()
+            end,
+          },
+        }
 
         if err then
           vim.notify("Failed to list Agentic sessions: " .. (err.message or "unknown error"), vim.log.levels.WARN)
         end
 
         for _, session_info in ipairs((result and result.sessions) or {}) do
-          items[#items + 1] = restore_session_item(#items + 1, session, session_info)
+          local label, updated_at, title = session_label(session_info)
+          local session_id = session_info.sessionId
+          items[#items + 1] = {
+            label = label,
+            run = function()
+              session:load_acp_session(session_id, title, updated_at)
+              session.widget:show()
+            end,
+          }
         end
 
         vim.schedule(function()
-          pick_items {
-            source = "agentic_sessions",
-            title = "Agentic Sessions",
-            items = items,
-          }
+          select_item(items, { prompt = "Agentic Sessions" })
         end)
       end)
     end)
