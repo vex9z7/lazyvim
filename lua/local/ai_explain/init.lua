@@ -111,11 +111,10 @@ local function render(buf, entry)
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
   if not current then
-    local line = vim.api.nvim_buf_get_lines(buf, entry.row, entry.row + 1, false)[1] or ""
-    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, #line, {
-      virt_text = { { "  …", "AiExplainPreview" } },
-      virt_text_pos = "inline",
-      priority = 10000,
+    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
+      sign_text = "󰧑",
+      sign_hl_group = "AiExplainMarker",
+      priority = 1,
     })
     return
   end
@@ -510,7 +509,7 @@ end
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
-  vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
+  vim.api.nvim_set_hl(0, "AiExplainMarker", { link = "DiagnosticSignHint" })
   vim.diagnostic.config({ signs = { priority = 1000 }, severity_sort = true, virtual_text = false }, pair_ns)
   if not original_virtual_text_handler then
     original_virtual_text_handler = vim.diagnostic.handlers.virtual_text
