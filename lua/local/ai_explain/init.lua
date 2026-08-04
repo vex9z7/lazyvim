@@ -483,7 +483,7 @@ function M.explain()
     return
   end
   local item = context(buf, row, col)
-  if not item then
+  if not item or item.focus:match "^%s*$" then
     return
   end
   item.context, item.text, item.offset = item.text, "", 0
