@@ -27,21 +27,22 @@ local function state(buf)
   return buffers[buf]
 end
 
-local function explainable(line)
-  local text = vim.trim(line)
-  if
-    text == ""
-    or text:match "^#"
-    or text:match "^//"
-    or text:match "^%-%-"
-    or text:match "^/%*"
-    or text:match "^%*"
-  then
+local function explainable(buf, row)
+  local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ""
+  local first = line:find "%S"
+  if not first then
     return false
   end
-  return text:find "[%a%d_]" ~= nil
+  local ok, node = pcall(vim.treesitter.get_node, { bufnr = buf, pos = { row, first - 1 } })
+  while ok and node do
+    local start_row = node:range()
+    if node:named() and start_row == row then
+      return not node:type():lower():find("comment", 1, true)
+    end
+    node = node:parent()
+  end
+  return false
 end
-
 local function explanation_node(node)
   while node:parent() do
     local kind = node:type()
@@ -494,7 +495,7 @@ function M.explain()
   attach(buf)
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row = row - 1
-  if not explainable(vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or "") then
+  if not explainable(buf, row) then
     return
   end
   local s = state(buf)
