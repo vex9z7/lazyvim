@@ -87,6 +87,12 @@ local function render(buf, entry)
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
   if not current then
+    local preview, more = viewport(entry.text, 0, 20)
+    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
+      virt_text = { { "  · " .. preview .. (more and " …" or ""), "AiExplainPreview" } },
+      virt_text_pos = "eol",
+      priority = 10000,
+    })
     return
   end
   local text, more = viewport(entry.text, 0, vim.api.nvim_win_get_width(0))
@@ -110,9 +116,8 @@ end
 local function render_all(buf)
   local s = state(buf)
   vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-  if s.entries[row] then
-    render(buf, s.entries[row])
+  for _, entry in pairs(s.entries) do
+    render(buf, entry)
   end
 end
 
@@ -273,6 +278,7 @@ end
 
 function M.setup()
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
+  vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,

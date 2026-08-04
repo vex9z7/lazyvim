@@ -4,6 +4,8 @@
 -- Avoid terminal Alt-key encoding turning a quick Escape followed by j/k into line moves.
 vim.keymap.del({ "n", "i", "v" }, "<A-j>")
 vim.keymap.del({ "n", "i", "v" }, "<A-k>")
+vim.keymap.del({ "n", "x" }, "j")
+vim.keymap.del({ "n", "x" }, "k")
 
 Snacks.toggle({
   name = "Git Diff Overlay",
