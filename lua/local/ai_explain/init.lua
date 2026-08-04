@@ -104,8 +104,9 @@ local function render(buf, entry)
   local line = vim.api.nvim_buf_get_lines(buf, entry.row, entry.row + 1, false)[1] or ""
   local indent = string.rep(" ", vim.fn.strdisplaywidth(line:match "^%s*" or ""))
   local virtual = {}
-  for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0) - #indent - 2)) do
-    virtual[#virtual + 1] = { { indent .. "· " .. part, "AiExplain" } }
+  for index, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0) - #indent - 3)) do
+    local prefix = index == 1 and "╰─ " or "   "
+    virtual[#virtual + 1] = { { indent .. prefix .. part, "AiExplain" } }
   end
   if entry.streaming then
     virtual[#virtual][1][1] = virtual[#virtual][1][1] .. " ▍"
