@@ -173,6 +173,37 @@ local function render_pair_visual(buf)
   })
 end
 
+local function clear_touched_pair_diagnostic(buf, firstline, lastline, new_lastline)
+  local last_changed_line = math.max(lastline, new_lastline)
+  for _, diagnostic in ipairs(vim.diagnostic.get(buf, { namespace = pair_ns })) do
+    if diagnostic.lnum >= firstline and diagnostic.lnum < last_changed_line then
+      vim.diagnostic.reset(pair_ns, buf)
+      vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
+      refresh_original_diagnostics(buf)
+      return
+    end
+  end
+end
+
+local function prune_pair_diagnostic(buf)
+  local pair = vim.diagnostic.get(buf, { namespace = pair_ns })[1]
+  if not pair then
+    return
+  end
+  local original = pair.user_data or {}
+  local exists = vim.iter(vim.diagnostic.get(buf)):any(function(diagnostic)
+    return diagnostic.namespace ~= pair_ns
+      and diagnostic.lnum == pair.lnum
+      and diagnostic.source == original.original_source
+      and diagnostic.message == original.original_message
+  end)
+  if not exists then
+    vim.diagnostic.reset(pair_ns, buf)
+    vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
+    refresh_original_diagnostics(buf)
+  end
+end
+
 local function clear_changed_entries(buf, firstline, lastline, new_lastline)
   if not vim.api.nvim_buf_is_valid(buf) then
     return
@@ -183,6 +214,7 @@ local function clear_changed_entries(buf, firstline, lastline, new_lastline)
     pcall(vim.fn.jobstop, job)
   end
   s.jobs = {}
+  clear_touched_pair_diagnostic(buf, firstline, lastline, new_lastline)
   local shift = new_lastline - lastline
   local remaining = {}
   for _, entry in pairs(s.entries) do
@@ -521,6 +553,16 @@ function M.setup(opts)
           M.explain()
         end
       end, 1200)
+    end,
+  })
+  vim.api.nvim_create_autocmd("DiagnosticChanged", {
+    group = group,
+    callback = function(args)
+      vim.schedule(function()
+        if vim.api.nvim_buf_is_valid(args.buf) then
+          prune_pair_diagnostic(args.buf)
+        end
+      end)
     end,
   })
   vim.api.nvim_create_autocmd("BufLeave", {
