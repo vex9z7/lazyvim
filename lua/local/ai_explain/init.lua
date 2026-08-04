@@ -347,6 +347,7 @@ local function request(buf, item, followup)
       item.streaming = false
       if s.generation == generation and vim.api.nvim_buf_is_valid(buf) and item.text ~= "" then
         publish()
+        vim.schedule(M.explain)
       elseif s.generation == generation then
         vim.notify("AI explanation request failed: " .. table.concat(stderr, " "), vim.log.levels.WARN)
       end
@@ -490,15 +491,6 @@ function M.explain()
   pair_diagnostic(buf, item)
 end
 
-local function cancel_jobs(buf)
-  local s = state(buf)
-  s.generation = s.generation + 1
-  for _, job in pairs(s.jobs) do
-    pcall(vim.fn.jobstop, job)
-  end
-  s.jobs = {}
-end
-
 function M.followup()
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
@@ -544,7 +536,6 @@ function M.setup(opts)
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
     callback = function(args)
-      cancel_jobs(args.buf)
       render_all(args.buf)
       render_pair_visual(args.buf)
       refresh_original_diagnostics(args.buf)
