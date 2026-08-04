@@ -113,7 +113,7 @@ local function request(buf, item, followup)
     messages = {
       {
         role = "system",
-        content = "Reply in Simplified Chinese only, as one compact sentence of at most 100 characters. Use exactly this structure: 本行：<this statement's concrete effect>；局部：<its role in the surrounding function or block>；整体：<its role in the nearby workflow>. Never say cursor, line, code, or speculate. No Markdown or code fences.",
+        content = "Reply in Simplified Chinese only with one natural inline annotation of at most 60 characters. Start with the statement's concrete action, then add its immediate purpose only when useful. Never use labels, headings, colons, cursor, line, code, or speculation. No Markdown or code fences. Example style: 将字符映射为整数 token，供后续张量化使用。",
       },
       {
         role = "user",
