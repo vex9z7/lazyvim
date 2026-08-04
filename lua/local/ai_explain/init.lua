@@ -225,7 +225,7 @@ function M.followup()
 end
 
 function M.setup()
-  vim.api.nvim_set_hl(0, "AiExplain", { fg = "#8fa6bd" })
+  vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
