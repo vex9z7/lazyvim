@@ -76,7 +76,9 @@ local function render(buf, entry)
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local text, more = viewport(entry.text, entry.offset, vim.api.nvim_win_get_width(0))
   vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
-    virt_text = { { " 󰧑 " .. text .. (more and " … <C-n>/<C-p>" or ""), "AiExplain" } },
+    virt_text = {
+      { " 󰧑 " .. text .. (entry.streaming and " ▍" or more and " … <C-n>/<C-p>" or ""), "AiExplain" },
+    },
     virt_text_pos = "eol",
   })
 end
@@ -132,6 +134,16 @@ local function request(buf, item, followup)
       render(buf, item)
     end
   end
+  local function schedule_publish()
+    if item.render_scheduled then
+      return
+    end
+    item.render_scheduled = true
+    vim.defer_fn(function()
+      item.render_scheduled = nil
+      publish()
+    end, 60)
+  end
   local function consume(chunk)
     partial = partial .. chunk
     for line in partial:gmatch "(.-)\n" do
@@ -144,6 +156,7 @@ local function request(buf, item, followup)
           and (data.choices[1].delta.content or data.choices[1].delta.reasoning_content)
         if type(token) == "string" then
           item.text = item.text .. token
+          schedule_publish()
         end
       end
     end
@@ -174,6 +187,7 @@ local function request(buf, item, followup)
     end,
     on_exit = function()
       s.jobs[job] = nil
+      item.streaming = false
       if s.generation == generation and vim.api.nvim_buf_is_valid(buf) and item.text ~= "" then
         publish()
       elseif s.generation == generation then
@@ -184,6 +198,7 @@ local function request(buf, item, followup)
   if job <= 0 then
     return
   end
+  item.streaming = true
   s.jobs[job] = job
 end
 
