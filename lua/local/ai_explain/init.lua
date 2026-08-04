@@ -111,10 +111,11 @@ local function render(buf, entry)
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
   if not current then
-    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
-      sign_text = "󰧑",
-      sign_hl_group = "AiExplainMarker",
-      priority = 1,
+    local line = vim.api.nvim_buf_get_lines(buf, entry.row, entry.row + 1, false)[1] or ""
+    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, #line, {
+      virt_text = { { " 󰧑", "AiExplainMarker" } },
+      virt_text_pos = "inline",
+      priority = 10000,
     })
     return
   end
