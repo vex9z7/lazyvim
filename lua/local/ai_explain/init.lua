@@ -45,19 +45,18 @@ local function context(buf, row, col)
   return { row = row, start_row = start_row, end_row = end_row, text = text }
 end
 
-local function wrap(text, width)
-  local lines, limit = {}, math.max(width - 8, 30)
-  for line in text:gmatch "[^\n]+" do
-    while vim.fn.strdisplaywidth(line) > limit do
-      local cut = limit
-      while cut > 1 and vim.fn.strdisplaywidth(line:sub(1, cut)) > limit do
-        cut = cut - 1
-      end
-      lines[#lines + 1], line = line:sub(1, cut), line:sub(cut + 1)
+local function viewport(text, offset, width)
+  local result, display, index = {}, 0, offset
+  local limit = math.max(width - 14, 20)
+  while index < vim.fn.strchars(text) and display < limit do
+    local char = vim.fn.strcharpart(text, index, 1)
+    local char_width = vim.fn.strdisplaywidth(char)
+    if display + char_width > limit then
+      break
     end
-    lines[#lines + 1] = line
+    result[#result + 1], display, index = char, display + char_width, index + 1
   end
-  return lines
+  return table.concat(result), index < vim.fn.strchars(text)
 end
 
 local function render(buf, entry)
@@ -65,27 +64,11 @@ local function render(buf, entry)
     return
   end
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
-  local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
-  local lines = wrap(entry.text, vim.api.nvim_win_get_width(0))
-  if current then
-    local from = entry.offset + 1
-    local virtual = {}
-    for i = from, math.min(from + 4, #lines) do
-      virtual[#virtual + 1] = { { "󰧑 " .. lines[i], "Comment" } }
-    end
-    if #lines > from + 4 then
-      virtual[#virtual + 1] = { { "…  <C-n>/<C-p>", "Comment" } }
-    end
-    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { virt_lines = virtual, virt_lines_above = false })
-  else
-    vim.api.nvim_buf_set_extmark(
-      buf,
-      ns,
-      entry.row,
-      0,
-      { virt_text = { { " 󰧑 " .. (lines[1] or "Explanation"), "Comment" } }, virt_text_pos = "eol" }
-    )
-  end
+  local text, more = viewport(entry.text, entry.offset, vim.api.nvim_win_get_width(0))
+  vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
+    virt_text = { { " 󰧑 " .. text .. (more and " … <C-n>/<C-p>" or ""), "AiExplain" } },
+    virt_text_pos = "eol",
+  })
 end
 
 local function render_all(buf)
@@ -118,7 +101,7 @@ local function request(buf, item, followup)
     messages = {
       {
         role = "system",
-        content = "Explain the supplied code concisely in plain language. Do not use markdown headings or code fences. Do not speculate.",
+        content = "Reply in Chinese as one compact line, at most 160 characters: first explain the cursor line, then its role in the enclosing function, then its role in the wider file. Use no Markdown, code fences, or speculation.",
       },
       {
         role = "user",
@@ -151,9 +134,6 @@ local function request(buf, item, followup)
           and (data.choices[1].delta.content or data.choices[1].delta.reasoning_content)
         if type(token) == "string" then
           item.text = item.text .. token
-          if not item.published and #wrap(item.text, vim.api.nvim_win_get_width(0)) >= 5 then
-            publish()
-          end
         end
       end
     end
@@ -223,7 +203,7 @@ function M.page(delta)
   if not entry then
     return false
   end
-  entry.offset = math.max(0, entry.offset + delta * 5)
+  entry.offset = math.max(0, entry.offset + delta * 30)
   render(buf, entry)
   return true
 end
@@ -245,6 +225,7 @@ function M.followup()
 end
 
 function M.setup()
+  vim.api.nvim_set_hl(0, "AiExplain", { fg = "#8fa6bd" })
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
