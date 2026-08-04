@@ -86,18 +86,21 @@ local function render(buf, entry)
   end
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
-  if current then
+  if not current then
+    return
+  end
+  local text, more = viewport(entry.text, 0, vim.api.nvim_win_get_width(0))
+  if more and not entry.streaming then
     local virtual = {}
     for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0))) do
-      virtual[#virtual + 1] = { { "󰧑 " .. part, "AiExplain" } }
+      virtual[#virtual + 1] = { { "· " .. part, "AiExplain" } }
     end
     vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { priority = 10000, virt_lines = virtual })
     return
   end
-  local text, more = viewport(entry.text, entry.offset, vim.api.nvim_win_get_width(0))
   vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
     virt_text = {
-      { " 󰧑 " .. text .. (entry.streaming and " ▍" or more and " … <C-n>/<C-p>" or ""), "AiExplain" },
+      { "  · " .. text .. (entry.streaming and " ▍" or more and " …" or ""), "AiExplain" },
     },
     virt_text_pos = "eol",
     priority = 10000,
@@ -107,8 +110,9 @@ end
 local function render_all(buf)
   local s = state(buf)
   vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-  for _, entry in pairs(s.entries) do
-    render(buf, entry)
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  if s.entries[row] then
+    render(buf, s.entries[row])
   end
 end
 
