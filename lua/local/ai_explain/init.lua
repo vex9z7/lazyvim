@@ -91,7 +91,7 @@ local function render(buf, entry)
     for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0))) do
       virtual[#virtual + 1] = { { "󰧑 " .. part, "AiExplain" } }
     end
-    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { virt_lines = virtual })
+    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { priority = 10000, virt_lines = virtual })
     return
   end
   local text, more = viewport(entry.text, entry.offset, vim.api.nvim_win_get_width(0))
@@ -100,6 +100,7 @@ local function render(buf, entry)
       { " 󰧑 " .. text .. (entry.streaming and " ▍" or more and " … <C-n>/<C-p>" or ""), "AiExplain" },
     },
     virt_text_pos = "eol",
+    priority = 10000,
   })
 end
 
