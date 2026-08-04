@@ -33,7 +33,6 @@ variable and falls back to `local` when no key is required.
 - For errors and meaningful warnings, request a short `Nudge` diagnostic before
   requesting the explanation.
 - Invalidate explanations affected by edits while retaining unrelated ones.
-- `<leader>K` is host-owned and asks a follow-up about the current explanation.
 
 ## Before publishing
 

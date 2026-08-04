@@ -284,7 +284,7 @@ local function post(payload, handlers)
   }, handlers)
 end
 
-local function request(buf, item, followup)
+local function request(buf, item)
   local s, generation = state(buf), state(buf).generation
   local language = assert(config.languages[config.language], "Unknown AI explanation language: " .. config.language)
   local payload = {
@@ -304,11 +304,7 @@ local function request(buf, item, followup)
       },
       {
         role = "user",
-        content = (
-          followup
-            and ("Code:\n" .. item.context .. "\n\nExisting explanation:\n" .. item.text .. "\n\nQuestion: " .. followup)
-          or ("Target statement:\n" .. item.focus .. "\n\nSurrounding context:\n" .. item.context)
-        ),
+        content = "Target statement:\n" .. item.focus .. "\n\nSurrounding context:\n" .. item.context,
       },
     },
   }
@@ -499,22 +495,6 @@ function M.explain()
   if not pair_diagnostic(buf, item) then
     request(buf, item)
   end
-end
-
-function M.followup()
-  local buf = vim.api.nvim_get_current_buf()
-  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-  local entry = state(buf).entries[row]
-  if not entry then
-    vim.notify("No code explanation on this line", vim.log.levels.INFO)
-    return
-  end
-  vim.ui.input({ prompt = "Ask about this explanation: " }, function(answer)
-    if answer and answer ~= "" then
-      entry.text = ""
-      request(buf, entry, answer)
-    end
-  end)
 end
 
 function M.setup(opts)
