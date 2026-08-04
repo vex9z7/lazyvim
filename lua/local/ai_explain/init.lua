@@ -2,6 +2,7 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace "ai_explain"
 local buffers = {}
+local config = {}
 local ignored_buftypes = { help = true, prompt = true, quickfix = true, terminal = true }
 local ignored_paths = { "/%.env", "/%.ssh/", "/%.gnupg/", "/secret", "/credential", "%.pem$", "%.key$" }
 
@@ -134,6 +135,7 @@ end
 
 local function request(buf, item, followup)
   local s, generation = state(buf), state(buf).generation
+  local language = assert(config.languages[config.language], "Unknown AI explanation language: " .. config.language)
   local payload = {
     model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
     stream = true,
@@ -142,7 +144,12 @@ local function request(buf, item, followup)
     messages = {
       {
         role = "system",
-        content = "Reply in English only with one natural inline annotation of at most 100 characters. Start with the statement's concrete action, then add its immediate purpose only when useful. Never use labels, headings, colons, cursor, line, code, or speculation. No Markdown or code fences. Example style: Maps characters to integer tokens for later tensor conversion.",
+        content = string.format(
+          "Reply in %s only with one natural inline annotation of at most %d characters. Start with the statement's concrete action, then add its immediate purpose only when useful. Never use labels, headings, colons, cursor, line, code, or speculation. No Markdown or code fences. Example style: %s",
+          language.name,
+          language.max_characters,
+          language.example
+        ),
       },
       {
         role = "user",
@@ -275,7 +282,8 @@ function M.followup()
   end)
 end
 
-function M.setup()
+function M.setup(opts)
+  config = vim.tbl_deep_extend("force", config, opts or {})
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
   vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
