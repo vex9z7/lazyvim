@@ -126,6 +126,39 @@ local function render_all(buf)
   end
 end
 
+local function refresh_original_diagnostics(buf)
+  for namespace in pairs(vim.diagnostic.get_namespaces()) do
+    if namespace ~= pair_ns then
+      vim.diagnostic.show(namespace, buf)
+    end
+  end
+end
+
+local function current_pair_diagnostic(buf)
+  if vim.api.nvim_get_current_buf() ~= buf then
+    return
+  end
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  return vim.diagnostic.get(buf, { namespace = pair_ns, lnum = row })[1]
+end
+
+local function render_pair_visual(buf)
+  vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
+  local diagnostic = current_pair_diagnostic(buf)
+  if not diagnostic then
+    return
+  end
+  local line = vim.api.nvim_buf_get_lines(buf, diagnostic.lnum, diagnostic.lnum + 1, false)[1] or ""
+  local highlight = "DiagnosticVirtualText"
+    .. vim.diagnostic.severity[diagnostic.severity]:gsub("^%l", string.upper):lower():gsub("^%l", string.upper)
+  local text, more = viewport("  ● Buddy: " .. diagnostic.message, 0, eol_width(buf, diagnostic.lnum))
+  vim.api.nvim_buf_set_extmark(buf, pair_visual_ns, diagnostic.lnum, #line, {
+    virt_text = { { text .. (more and " …" or ""), highlight } },
+    virt_text_pos = "inline",
+    priority = 10000,
+  })
+end
+
 local function clear(buf)
   local s = state(buf)
   s.generation = s.generation + 1
@@ -135,11 +168,7 @@ local function clear(buf)
   s.entries, s.jobs, s.pair_seen = {}, {}, {}
   vim.diagnostic.reset(pair_ns, buf)
   vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
-  for namespace in pairs(vim.diagnostic.get_namespaces()) do
-    if namespace ~= pair_ns then
-      vim.diagnostic.show(namespace, buf)
-    end
-  end
+  refresh_original_diagnostics(buf)
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
@@ -329,20 +358,8 @@ local function request_pair_diagnostic(buf, item, diagnostic)
             user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
           },
         })
-        local line = vim.api.nvim_buf_get_lines(buf, diagnostic.lnum, diagnostic.lnum + 1, false)[1] or ""
-        local highlight = "DiagnosticVirtualText"
-          .. vim.diagnostic.severity[diagnostic.severity]:gsub("^%l", string.upper):lower():gsub("^%l", string.upper)
-        vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, diagnostic.lnum, diagnostic.lnum + 1)
-        vim.api.nvim_buf_set_extmark(buf, pair_visual_ns, diagnostic.lnum, #line, {
-          virt_text = { { "  ● Buddy: " .. output, highlight } },
-          virt_text_pos = "inline",
-          priority = 10000,
-        })
-        for namespace in pairs(vim.diagnostic.get_namespaces()) do
-          if namespace ~= pair_ns then
-            vim.diagnostic.show(namespace, buf)
-          end
-        end
+        render_pair_visual(buf)
+        refresh_original_diagnostics(buf)
       end
     end,
   })
@@ -429,15 +446,12 @@ function M.setup(opts)
         if namespace == pair_ns then
           return
         end
-        local paired_lines = {}
-        for _, diagnostic in ipairs(vim.diagnostic.get(buf, { namespace = pair_ns })) do
-          paired_lines[diagnostic.lnum] = true
-        end
+        local paired = current_pair_diagnostic(buf)
         original_virtual_text_handler.show(
           namespace,
           buf,
           vim.tbl_filter(function(diagnostic)
-            return not paired_lines[diagnostic.lnum]
+            return not paired or diagnostic.lnum ~= paired.lnum
           end, diagnostics),
           options
         )
@@ -451,11 +465,24 @@ function M.setup(opts)
     callback = function(args)
       cancel_jobs(args.buf)
       render_all(args.buf)
+      render_pair_visual(args.buf)
+      refresh_original_diagnostics(args.buf)
       vim.defer_fn(function()
         if vim.api.nvim_buf_is_valid(args.buf) and vim.api.nvim_get_current_buf() == args.buf then
           M.explain()
         end
       end, 1200)
+    end,
+  })
+  vim.api.nvim_create_autocmd("BufLeave", {
+    group = group,
+    callback = function(args)
+      vim.schedule(function()
+        if vim.api.nvim_buf_is_valid(args.buf) then
+          vim.api.nvim_buf_clear_namespace(args.buf, pair_visual_ns, 0, -1)
+          refresh_original_diagnostics(args.buf)
+        end
+      end)
     end,
   })
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
