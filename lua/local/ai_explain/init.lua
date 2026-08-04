@@ -256,12 +256,12 @@ local function request_pair_diagnostic(buf, item, diagnostic)
   local payload = {
     model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
     stream = true,
-    max_tokens = 64,
+    max_tokens = 40,
     chat_template_kwargs = { enable_thinking = false },
     messages = {
       {
         role = "system",
-        content = "You are an expert pair programmer. For an ERROR, state the root cause and proper fix direction. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state that impact and proper fix direction. Reply in English only: one direct sentence of at most 18 words; no Markdown, labels, or speculation.",
+        content = "You are a concise coding buddy. For an ERROR, state only its root cause. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state only the issue. Reply in English only: one direct sentence of at most 12 words; no Markdown, labels, fixes, or speculation.",
       },
       {
         role = "user",
@@ -324,7 +324,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
             end_lnum = diagnostic.end_lnum,
             end_col = diagnostic.end_col,
             severity = diagnostic.severity,
-            source = "AI Pair",
+            source = "Buddy",
             message = output,
             user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
           },
@@ -334,7 +334,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
           .. vim.diagnostic.severity[diagnostic.severity]:gsub("^%l", string.upper):lower():gsub("^%l", string.upper)
         vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, diagnostic.lnum, diagnostic.lnum + 1)
         vim.api.nvim_buf_set_extmark(buf, pair_visual_ns, diagnostic.lnum, #line, {
-          virt_text = { { "  ● AI Pair: " .. output, highlight } },
+          virt_text = { { "  ● Buddy: " .. output, highlight } },
           virt_text_pos = "inline",
           priority = 10000,
         })
