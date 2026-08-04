@@ -278,7 +278,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
           and data.choices
           and data.choices[1]
           and data.choices[1].delta
-          and data.choices[1].delta.content
+          and (data.choices[1].delta.content or data.choices[1].delta.reasoning_content)
         if type(token) == "string" then
           output = output .. token
         end
@@ -355,7 +355,11 @@ function M.explain()
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row = row - 1
   local s = state(buf)
-  if s.entries[row] or next(s.jobs) then
+  if s.entries[row] then
+    pair_diagnostic(buf, s.entries[row])
+    return
+  end
+  if next(s.jobs) then
     return
   end
   local item = context(buf, row, col)
