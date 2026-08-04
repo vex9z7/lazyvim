@@ -256,12 +256,12 @@ local function request_pair_diagnostic(buf, item, diagnostic)
   local payload = {
     model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
     stream = true,
-    max_tokens = 140,
+    max_tokens = 64,
     chat_template_kwargs = { enable_thinking = false },
     messages = {
       {
         role = "system",
-        content = "You are an expert pair programmer. For an ERROR, state the root cause and proper fix direction. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state that impact and proper fix direction. Reply in English only, one concise sentence, no Markdown, labels, or speculation.",
+        content = "You are an expert pair programmer. For an ERROR, state the root cause and proper fix direction. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state that impact and proper fix direction. Reply in English only: one direct sentence of at most 18 words; no Markdown, labels, or speculation.",
       },
       {
         role = "user",
