@@ -2,6 +2,9 @@ return {
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
+      opts.diagnostics = vim.tbl_deep_extend("force", opts.diagnostics or {}, {
+        virtual_text = { spacing = 1 },
+      })
       for index = #(opts.servers["*"].keys or {}), 1, -1 do
         local key = opts.servers["*"].keys[index]
         if key[1] == "gr" or key[1] == "<leader>cr" then
