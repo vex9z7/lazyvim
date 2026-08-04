@@ -147,7 +147,7 @@ local function request(buf, item, followup)
           and data.choices[1]
           and data.choices[1].delta
           and data.choices[1].delta.content
-        if token then
+        if type(token) == "string" then
           item.text = item.text .. token
           if not item.published and #wrap(item.text, vim.api.nvim_win_get_width(0)) >= 5 then
             publish()
