@@ -50,10 +50,13 @@ local function context(buf, row, col)
   if not text or #text > 24000 then
     return nil
   end
+  local node_start_row, _, node_end_row = node:range()
   return {
     row = row,
     start_row = start_row,
     end_row = end_row,
+    node_start_row = node_start_row,
+    node_end_row = node_end_row,
     focus = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1],
     text = text,
   }
@@ -158,19 +161,53 @@ local function render_pair_visual(buf)
   })
 end
 
-local function clear(buf)
+local function clear_changed_entries(buf, firstline, lastline, new_lastline)
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
   local s = state(buf)
   s.generation = s.generation + 1
   for _, job in pairs(s.jobs) do
     pcall(vim.fn.jobstop, job)
   end
-  s.entries, s.jobs, s.pair_seen = {}, {}, {}
-  vim.diagnostic.reset(pair_ns, buf)
-  vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
-  refresh_original_diagnostics(buf)
-  if vim.api.nvim_buf_is_valid(buf) then
-    vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+  s.jobs = {}
+  local shift = new_lastline - lastline
+  local remaining = {}
+  for _, entry in pairs(s.entries) do
+    local changed = entry.node_start_row <= firstline and entry.node_end_row >= firstline
+      or lastline > firstline and entry.node_start_row < lastline and entry.node_end_row > firstline
+    if not changed then
+      if entry.node_start_row >= lastline then
+        entry.row = entry.row + shift
+        entry.start_row = entry.start_row + shift
+        entry.end_row = entry.end_row + shift
+        entry.node_start_row = entry.node_start_row + shift
+        entry.node_end_row = entry.node_end_row + shift
+      end
+      remaining[entry.row] = entry
+    end
   end
+  s.entries = remaining
+  vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+  render_all(buf)
+end
+
+local function attach(buf)
+  local s = state(buf)
+  if s.attached then
+    return
+  end
+  s.attached = true
+  vim.api.nvim_buf_attach(buf, false, {
+    on_lines = function(_, _, _, firstline, lastline, new_lastline)
+      vim.schedule(function()
+        clear_changed_entries(buf, firstline, lastline, new_lastline)
+      end)
+    end,
+    on_detach = function()
+      buffers[buf] = nil
+    end,
+  })
 end
 
 local function request(buf, item, followup)
@@ -389,6 +426,7 @@ function M.explain()
   if vim.fn.mode() ~= "n" or not allowed(buf) then
     return
   end
+  attach(buf)
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row = row - 1
   local s = state(buf)
@@ -482,12 +520,6 @@ function M.setup(opts)
           refresh_original_diagnostics(args.buf)
         end
       end)
-    end,
-  })
-  vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-    group = group,
-    callback = function(args)
-      clear(args.buf)
     end,
   })
 end
