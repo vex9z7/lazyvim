@@ -68,10 +68,10 @@ local function context(buf, row, col)
     end
     best = parent
   end
-  local start_row, _, end_row = best:range()
   local text = vim.treesitter.get_node_text(best, buf)
   if best:type() == "module" or best:type() == "program" or #text > 24000 then
-    start_row, end_row = math.max(0, row - 8), math.min(vim.api.nvim_buf_line_count(buf), row + 9)
+    local start_row = math.max(0, row - 8)
+    local end_row = math.min(vim.api.nvim_buf_line_count(buf), row + 9)
     text = table.concat(vim.api.nvim_buf_get_lines(buf, start_row, end_row, false), "\n")
   end
   if not text or #text > 24000 then
@@ -81,8 +81,6 @@ local function context(buf, row, col)
   local node_start_row, _, node_end_row = subject:range()
   return {
     row = row,
-    start_row = start_row,
-    end_row = end_row,
     node_start_row = node_start_row,
     node_end_row = node_end_row,
     focus = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1],
@@ -239,8 +237,6 @@ local function clear_changed_entries(buf, firstline, lastline, new_lastline)
     if not changed then
       if entry.node_start_row >= lastline then
         entry.row = entry.row + shift
-        entry.start_row = entry.start_row + shift
-        entry.end_row = entry.end_row + shift
         entry.node_start_row = entry.node_start_row + shift
         entry.node_end_row = entry.node_end_row + shift
       end
@@ -270,11 +266,29 @@ local function attach(buf)
   })
 end
 
+local function post(payload, handlers)
+  return vim.fn.jobstart({
+    "curl",
+    "--no-buffer",
+    "--silent",
+    "--show-error",
+    "-X",
+    "POST",
+    assert(config.endpoint, "AI explanation endpoint is not configured"),
+    "-H",
+    "Content-Type: application/json",
+    "-H",
+    "Authorization: Bearer " .. (vim.env[config.api_key_env or "LLAMACPP_API_KEY"] or "local"),
+    "-d",
+    vim.json.encode(payload),
+  }, handlers)
+end
+
 local function request(buf, item, followup)
   local s, generation = state(buf), state(buf).generation
   local language = assert(config.languages[config.language], "Unknown AI explanation language: " .. config.language)
   local payload = {
-    model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
+    model = assert(config.model, "AI explanation model is not configured"),
     stream = true,
     max_tokens = 350,
     chat_template_kwargs = { enable_thinking = false },
@@ -303,7 +317,6 @@ local function request(buf, item, followup)
   local function publish()
     if s.generation == generation and vim.api.nvim_buf_is_valid(buf) then
       s.entries[item.row] = item
-      item.published = true
       render(buf, item)
     end
   end
@@ -336,21 +349,7 @@ local function request(buf, item, followup)
     partial = partial:match "[^\n]*$" or ""
   end
   local job
-  job = vim.fn.jobstart({
-    "curl",
-    "--no-buffer",
-    "--silent",
-    "--show-error",
-    "-X",
-    "POST",
-    "https://llamacpp-stack.vex9z7.com/v1/chat/completions",
-    "-H",
-    "Content-Type: application/json",
-    "-H",
-    "Authorization: Bearer " .. (vim.env.LLAMACPP_API_KEY or "local"),
-    "-d",
-    vim.json.encode(payload),
-  }, {
+  job = post(payload, {
     stdout_buffered = false,
     on_stdout = function(_, data)
       consume(table.concat(data, "\n"))
@@ -380,7 +379,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
   local s, generation = state(buf), state(buf).generation
   local output, partial = "", ""
   local payload = {
-    model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
+    model = assert(config.model, "AI explanation model is not configured"),
     stream = true,
     max_tokens = 40,
     chat_template_kwargs = { enable_thinking = false },
@@ -420,21 +419,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
     partial = partial:match "[^\n]*$" or ""
   end
   local job
-  job = vim.fn.jobstart({
-    "curl",
-    "--no-buffer",
-    "--silent",
-    "--show-error",
-    "-X",
-    "POST",
-    "https://llamacpp-stack.vex9z7.com/v1/chat/completions",
-    "-H",
-    "Content-Type: application/json",
-    "-H",
-    "Authorization: Bearer " .. (vim.env.LLAMACPP_API_KEY or "local"),
-    "-d",
-    vim.json.encode(payload),
-  }, {
+  job = post(payload, {
     stdout_buffered = false,
     on_stdout = function(_, data)
       consume(table.concat(data, "\n"))
@@ -510,7 +495,7 @@ function M.explain()
   if not item then
     return
   end
-  item.context, item.text, item.offset = item.text, "", 0
+  item.context, item.text = item.text, ""
   if not pair_diagnostic(buf, item) then
     request(buf, item)
   end
