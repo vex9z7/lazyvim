@@ -27,6 +27,17 @@ local function state(buf)
   return buffers[buf]
 end
 
+local function explanation_node(node)
+  while node:parent() do
+    local kind = node:type()
+    if kind:find "statement" or kind:find "declaration" or kind:find "definition" or kind == "assignment" then
+      break
+    end
+    node = node:parent()
+  end
+  return node
+end
+
 local function context(buf, row, col)
   local ok, node = pcall(vim.treesitter.get_node, { bufnr = buf, pos = { row, col } })
   if not ok or not node or node:has_error() then
@@ -50,7 +61,8 @@ local function context(buf, row, col)
   if not text or #text > 24000 then
     return nil
   end
-  local node_start_row, _, node_end_row = node:range()
+  local subject = explanation_node(node)
+  local node_start_row, _, node_end_row = subject:range()
   return {
     row = row,
     start_row = start_row,
