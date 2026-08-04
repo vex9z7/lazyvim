@@ -27,6 +27,21 @@ local function state(buf)
   return buffers[buf]
 end
 
+local function explainable(line)
+  local text = vim.trim(line)
+  if
+    text == ""
+    or text:match "^#"
+    or text:match "^//"
+    or text:match "^%-%-"
+    or text:match "^/%*"
+    or text:match "^%*"
+  then
+    return false
+  end
+  return text:find "[%a%d_]" ~= nil
+end
+
 local function explanation_node(node)
   while node:parent() do
     local kind = node:type()
@@ -479,6 +494,9 @@ function M.explain()
   attach(buf)
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row = row - 1
+  if not explainable(vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or "") then
+    return
+  end
   local s = state(buf)
   if s.entries[row] then
     pair_diagnostic(buf, s.entries[row])
@@ -488,7 +506,7 @@ function M.explain()
     return
   end
   local item = context(buf, row, col)
-  if not item or item.focus:match "^%s*$" then
+  if not item then
     return
   end
   item.context, item.text, item.offset = item.text, "", 0
