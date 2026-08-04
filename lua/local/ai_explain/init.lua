@@ -100,22 +100,16 @@ local function render(buf, entry)
     })
     return
   end
-  local text, more = viewport(entry.text, 0, eol_width(buf, entry.row))
-  if more and not entry.streaming then
-    local virtual = {}
-    for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0))) do
-      virtual[#virtual + 1] = { { "· " .. part, "AiExplain" } }
-    end
-    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { priority = 10000, virt_lines = virtual })
-    return
+  local line = vim.api.nvim_buf_get_lines(buf, entry.row, entry.row + 1, false)[1] or ""
+  local indent = string.rep(" ", vim.fn.strdisplaywidth(line:match "^%s*" or ""))
+  local virtual = {}
+  for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0) - #indent - 2)) do
+    virtual[#virtual + 1] = { { indent .. "· " .. part, "AiExplain" } }
   end
-  vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
-    virt_text = {
-      { "  · " .. text .. (entry.streaming and " ▍" or more and " …" or ""), "AiExplain" },
-    },
-    virt_text_pos = "eol",
-    priority = 10000,
-  })
+  if entry.streaming then
+    virtual[#virtual][1][1] = virtual[#virtual][1][1] .. " ▍"
+  end
+  vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { priority = 10000, virt_lines = virtual })
 end
 
 local function render_all(buf)
