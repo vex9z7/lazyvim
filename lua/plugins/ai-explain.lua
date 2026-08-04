@@ -1,8 +1,8 @@
 return {
   {
-    "folke/snacks.nvim",
-    init = function()
-      require("local.ai_explain").setup {
+    "vex9z7/nudge.nvim",
+    config = function()
+      require("nudge").setup {
         endpoint = "https://llamacpp-stack.vex9z7.com/v1/chat/completions",
         model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
         api_key_env = "LLAMACPP_API_KEY",
