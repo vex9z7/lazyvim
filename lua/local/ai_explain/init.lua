@@ -1,6 +1,7 @@
 local M = {}
 
 local ns = vim.api.nvim_create_namespace "ai_explain"
+local pair_ns = vim.api.nvim_create_namespace "ai_pair"
 local buffers = {}
 local config = {}
 local ignored_buftypes = { help = true, prompt = true, quickfix = true, terminal = true }
@@ -19,7 +20,7 @@ end
 
 local function state(buf)
   if not buffers[buf] then
-    buffers[buf] = { generation = 0, entries = {}, jobs = {} }
+    buffers[buf] = { generation = 0, entries = {}, jobs = {}, pair_seen = {} }
   end
   return buffers[buf]
 end
@@ -129,7 +130,8 @@ local function clear(buf)
   for _, job in pairs(s.jobs) do
     pcall(vim.fn.jobstop, job)
   end
-  s.entries, s.jobs = {}, {}
+  s.entries, s.jobs, s.pair_seen = {}, {}, {}
+  vim.diagnostic.reset(pair_ns, buf)
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
@@ -240,6 +242,110 @@ local function request(buf, item, followup)
   s.jobs[job] = job
 end
 
+local function request_pair_diagnostic(buf, item, diagnostic)
+  local s, generation = state(buf), state(buf).generation
+  local output, partial = "", ""
+  local payload = {
+    model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
+    stream = true,
+    max_tokens = 140,
+    chat_template_kwargs = { enable_thinking = false },
+    messages = {
+      {
+        role = "system",
+        content = "You are an expert pair programmer. For an ERROR, state the root cause and proper fix direction. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state that impact and proper fix direction. Reply in English only, one concise sentence, no Markdown, labels, or speculation.",
+      },
+      {
+        role = "user",
+        content = string.format(
+          "Diagnostic (%s, %s): %s\n\nTarget statement:\n%s\n\nSurrounding context:\n%s",
+          diagnostic.source or "LSP",
+          vim.diagnostic.severity[diagnostic.severity],
+          diagnostic.message,
+          item.focus,
+          item.context
+        ),
+      },
+    },
+  }
+  local function consume(chunk)
+    partial = partial .. chunk
+    for line in partial:gmatch "(.-)\n" do
+      if line:sub(1, 6) == "data: " then
+        local ok, data = pcall(vim.json.decode, line:sub(7))
+        local token = ok
+          and data.choices
+          and data.choices[1]
+          and data.choices[1].delta
+          and data.choices[1].delta.content
+        if type(token) == "string" then
+          output = output .. token
+        end
+      end
+    end
+    partial = partial:match "[^\n]*$" or ""
+  end
+  local job
+  job = vim.fn.jobstart({
+    "curl",
+    "--no-buffer",
+    "--silent",
+    "--show-error",
+    "-X",
+    "POST",
+    "https://llamacpp-stack.vex9z7.com/v1/chat/completions",
+    "-H",
+    "Content-Type: application/json",
+    "-H",
+    "Authorization: Bearer " .. (vim.env.LLAMACPP_API_KEY or "local"),
+    "-d",
+    vim.json.encode(payload),
+  }, {
+    stdout_buffered = false,
+    on_stdout = function(_, data)
+      consume(table.concat(data, "\n"))
+    end,
+    on_exit = function()
+      s.jobs[job] = nil
+      output = vim.trim(output)
+      if s.generation == generation and output ~= "" and output:upper() ~= "SKIP" then
+        vim.diagnostic.set(pair_ns, buf, {
+          {
+            lnum = diagnostic.lnum,
+            col = diagnostic.col,
+            end_lnum = diagnostic.end_lnum,
+            end_col = diagnostic.end_col,
+            severity = diagnostic.severity,
+            source = "AI Pair",
+            message = output,
+            user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
+          },
+        })
+      end
+    end,
+  })
+  if job > 0 then
+    s.jobs[job] = job
+  end
+end
+
+local function pair_diagnostic(buf, item)
+  local diagnostics = vim.diagnostic.get(buf, { lnum = item.row })
+  table.sort(diagnostics, function(a, b)
+    return a.severity < b.severity
+  end)
+  local diagnostic = diagnostics[1]
+  if not diagnostic or diagnostic.severity > vim.diagnostic.severity.WARN then
+    return
+  end
+  local fingerprint = table.concat({ diagnostic.lnum, diagnostic.col, diagnostic.severity, diagnostic.message }, ":")
+  if state(buf).pair_seen[fingerprint] then
+    return
+  end
+  state(buf).pair_seen[fingerprint] = true
+  request_pair_diagnostic(buf, item, diagnostic)
+end
+
 function M.explain()
   local buf = vim.api.nvim_get_current_buf()
   if vim.fn.mode() ~= "n" or not allowed(buf) then
@@ -257,6 +363,7 @@ function M.explain()
   end
   item.context, item.text, item.offset = item.text, "", 0
   request(buf, item)
+  pair_diagnostic(buf, item)
 end
 
 local function cancel_jobs(buf)
@@ -288,6 +395,7 @@ function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
   vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
+  vim.diagnostic.config({ signs = { priority = 1000 }, severity_sort = true }, pair_ns)
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
@@ -305,6 +413,15 @@ function M.setup(opts)
     group = group,
     callback = function(args)
       clear(args.buf)
+    end,
+  })
+  vim.api.nvim_create_autocmd("DiagnosticChanged", {
+    group = group,
+    callback = function(args)
+      if args.data.namespace ~= pair_ns then
+        state(args.buf).pair_seen = {}
+        vim.diagnostic.reset(pair_ns, args.buf)
+      end
     end,
   })
 end
