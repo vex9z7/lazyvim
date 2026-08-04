@@ -5,6 +5,7 @@ local pair_ns = vim.api.nvim_create_namespace "ai_pair"
 local pair_visual_ns = vim.api.nvim_create_namespace "ai_pair_visual"
 local buffers = {}
 local config = {}
+local original_virtual_text_handler
 local ignored_buftypes = { help = true, prompt = true, quickfix = true, terminal = true }
 local ignored_paths = { "/%.env", "/%.ssh/", "/%.gnupg/", "/secret", "/credential", "%.pem$", "%.key$" }
 
@@ -134,6 +135,11 @@ local function clear(buf)
   s.entries, s.jobs, s.pair_seen = {}, {}, {}
   vim.diagnostic.reset(pair_ns, buf)
   vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
+  for namespace in pairs(vim.diagnostic.get_namespaces()) do
+    if namespace ~= pair_ns then
+      vim.diagnostic.show(namespace, buf)
+    end
+  end
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
@@ -332,6 +338,11 @@ local function request_pair_diagnostic(buf, item, diagnostic)
           virt_text_pos = "inline",
           priority = 10000,
         })
+        for namespace in pairs(vim.diagnostic.get_namespaces()) do
+          if namespace ~= pair_ns then
+            vim.diagnostic.show(namespace, buf)
+          end
+        end
       end
     end,
   })
@@ -411,6 +422,29 @@ function M.setup(opts)
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
   vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
   vim.diagnostic.config({ signs = { priority = 1000 }, severity_sort = true, virtual_text = false }, pair_ns)
+  if not original_virtual_text_handler then
+    original_virtual_text_handler = vim.diagnostic.handlers.virtual_text
+    vim.diagnostic.handlers.virtual_text = {
+      show = function(namespace, buf, diagnostics, options)
+        if namespace == pair_ns then
+          return
+        end
+        local paired_lines = {}
+        for _, diagnostic in ipairs(vim.diagnostic.get(buf, { namespace = pair_ns })) do
+          paired_lines[diagnostic.lnum] = true
+        end
+        original_virtual_text_handler.show(
+          namespace,
+          buf,
+          vim.tbl_filter(function(diagnostic)
+            return not paired_lines[diagnostic.lnum]
+          end, diagnostics),
+          options
+        )
+      end,
+      hide = original_virtual_text_handler.hide,
+    }
+  end
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
