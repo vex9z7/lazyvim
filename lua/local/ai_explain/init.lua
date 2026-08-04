@@ -80,6 +80,11 @@ local function wrapped(text, width)
   return parts
 end
 
+local function eol_width(buf, row)
+  local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ""
+  return math.max(vim.api.nvim_win_get_width(0) - vim.fn.strdisplaywidth(line), 20)
+end
+
 local function render(buf, entry)
   if not vim.api.nvim_buf_is_valid(buf) then
     return
@@ -87,7 +92,7 @@ local function render(buf, entry)
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
   local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
   if not current then
-    local preview, more = viewport(entry.text, 0, 20)
+    local preview, more = viewport(entry.text, 0, math.min(eol_width(buf, entry.row), 20))
     vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
       virt_text = { { "  · " .. preview .. (more and " …" or ""), "AiExplainPreview" } },
       virt_text_pos = "eol",
@@ -95,7 +100,7 @@ local function render(buf, entry)
     })
     return
   end
-  local text, more = viewport(entry.text, 0, vim.api.nvim_win_get_width(0))
+  local text, more = viewport(entry.text, 0, eol_width(buf, entry.row))
   if more and not entry.streaming then
     local virtual = {}
     for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0))) do
