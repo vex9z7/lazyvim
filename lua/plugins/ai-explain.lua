@@ -1,6 +1,7 @@
 return {
   {
     "vex9z7/nudge.nvim",
+    branch = "master",
     config = function()
       require("nudge").setup {
         endpoint = "https://llamacpp-stack.vex9z7.com/v1/chat/completions",
