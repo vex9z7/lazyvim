@@ -31,18 +31,28 @@ local function context(buf, row, col)
   local best = node
   while best:parent() do
     local parent = best:parent()
-    local start_row, _, end_row = parent:range()
-    if end_row - start_row > 120 then
+    if vim.tbl_contains({ "function_definition", "class_definition", "method_definition" }, parent:type()) then
+      best = parent
       break
     end
     best = parent
   end
   local start_row, _, end_row = best:range()
   local text = vim.treesitter.get_node_text(best, buf)
+  if best:type() == "module" or best:type() == "program" then
+    start_row, end_row = math.max(0, row - 8), math.min(vim.api.nvim_buf_line_count(buf), row + 9)
+    text = table.concat(vim.api.nvim_buf_get_lines(buf, start_row, end_row, false), "\n")
+  end
   if not text or #text > 24000 then
     return nil
   end
-  return { row = row, start_row = start_row, end_row = end_row, text = text }
+  return {
+    row = row,
+    start_row = start_row,
+    end_row = end_row,
+    focus = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1],
+    text = text,
+  }
 end
 
 local function viewport(text, offset, width)
@@ -101,14 +111,14 @@ local function request(buf, item, followup)
     messages = {
       {
         role = "system",
-        content = "Reply in Chinese as one compact line, at most 160 characters: first explain the cursor line, then its role in the enclosing function, then its role in the wider file. Use no Markdown, code fences, or speculation.",
+        content = "Reply in Simplified Chinese only, as one compact sentence of at most 100 characters. Use exactly this structure: 本行：<this statement's concrete effect>；局部：<its role in the surrounding function or block>；整体：<its role in the nearby workflow>. Never say cursor, line, code, or speculate. No Markdown or code fences.",
       },
       {
         role = "user",
         content = (
           followup
             and ("Code:\n" .. item.context .. "\n\nExisting explanation:\n" .. item.text .. "\n\nQuestion: " .. followup)
-          or ("Code:\n" .. item.context)
+          or ("Target statement:\n" .. item.focus .. "\n\nSurrounding context:\n" .. item.context)
         ),
       },
     },
@@ -196,6 +206,15 @@ function M.explain()
   request(buf, item)
 end
 
+local function cancel_jobs(buf)
+  local s = state(buf)
+  s.generation = s.generation + 1
+  for _, job in pairs(s.jobs) do
+    pcall(vim.fn.jobstop, job)
+  end
+  s.jobs = {}
+end
+
 function M.page(delta)
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
@@ -230,6 +249,7 @@ function M.setup()
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
     callback = function(args)
+      cancel_jobs(args.buf)
       render_all(args.buf)
       vim.defer_fn(function()
         if vim.api.nvim_buf_is_valid(args.buf) and vim.api.nvim_get_current_buf() == args.buf then
