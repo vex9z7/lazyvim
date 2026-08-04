@@ -69,11 +69,31 @@ local function viewport(text, offset, width)
   return table.concat(result), index < vim.fn.strchars(text)
 end
 
+local function wrapped(text, width)
+  local parts, offset, more = {}, 0, true
+  while more do
+    local part
+    part, more = viewport(text, offset, width)
+    parts[#parts + 1] = part
+    offset = offset + vim.fn.strchars(part)
+  end
+  return parts
+end
+
 local function render(buf, entry)
   if not vim.api.nvim_buf_is_valid(buf) then
     return
   end
   vim.api.nvim_buf_clear_namespace(buf, ns, entry.row, entry.row + 1)
+  local current = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] - 1 == entry.row
+  if current then
+    local virtual = {}
+    for _, part in ipairs(wrapped(entry.text, vim.api.nvim_win_get_width(0))) do
+      virtual[#virtual + 1] = { { "󰧑 " .. part, "AiExplain" } }
+    end
+    vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, { virt_lines = virtual })
+    return
+  end
   local text, more = viewport(entry.text, entry.offset, vim.api.nvim_win_get_width(0))
   vim.api.nvim_buf_set_extmark(buf, ns, entry.row, 0, {
     virt_text = {
@@ -230,18 +250,6 @@ local function cancel_jobs(buf)
   s.jobs = {}
 end
 
-function M.page(delta)
-  local buf = vim.api.nvim_get_current_buf()
-  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-  local entry = state(buf).entries[row]
-  if not entry then
-    return false
-  end
-  entry.offset = math.max(0, entry.offset + delta * 30)
-  render(buf, entry)
-  return true
-end
-
 function M.followup()
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
@@ -279,12 +287,6 @@ function M.setup()
       clear(args.buf)
     end,
   })
-  vim.keymap.set("n", "<C-n>", function()
-    return M.page(1) and "" or "<C-n>"
-  end, { expr = true, desc = "Next explanation page" })
-  vim.keymap.set("n", "<C-p>", function()
-    return M.page(-1) and "" or "<C-p>"
-  end, { expr = true, desc = "Previous explanation page" })
 end
 
 return M
