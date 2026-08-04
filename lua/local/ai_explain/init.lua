@@ -426,27 +426,32 @@ local function request_pair_diagnostic(buf, item, diagnostic)
     on_exit = function()
       s.jobs[job] = nil
       output = vim.trim(output)
-      if s.generation == generation and output ~= "" and output:upper() ~= "SKIP" then
-        vim.diagnostic.set(pair_ns, buf, {
-          {
-            lnum = diagnostic.lnum,
-            col = diagnostic.col,
-            end_lnum = diagnostic.end_lnum,
-            end_col = diagnostic.end_col,
-            severity = diagnostic.severity,
-            source = "Nudge",
-            message = output,
-            user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
-          },
-        })
-        render_pair_visual(buf)
-        refresh_original_diagnostics(buf)
+      if s.generation == generation then
+        if output ~= "" and output:upper() ~= "SKIP" then
+          vim.diagnostic.set(pair_ns, buf, {
+            {
+              lnum = diagnostic.lnum,
+              col = diagnostic.col,
+              end_lnum = diagnostic.end_lnum,
+              end_col = diagnostic.end_col,
+              severity = diagnostic.severity,
+              source = "Nudge",
+              message = output,
+              user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
+            },
+          })
+          render_pair_visual(buf)
+          refresh_original_diagnostics(buf)
+        end
+        request(buf, item)
       end
     end,
   })
   if job > 0 then
     s.jobs[job] = job
+    return true
   end
+  return false
 end
 
 local function pair_diagnostic(buf, item)
@@ -456,14 +461,14 @@ local function pair_diagnostic(buf, item)
   end)
   local diagnostic = diagnostics[1]
   if not diagnostic or diagnostic.severity > vim.diagnostic.severity.WARN then
-    return
+    return false
   end
   local fingerprint = table.concat({ diagnostic.lnum, diagnostic.col, diagnostic.severity, diagnostic.message }, ":")
   if state(buf).pair_seen[fingerprint] then
-    return
+    return false
   end
   state(buf).pair_seen[fingerprint] = true
-  request_pair_diagnostic(buf, item, diagnostic)
+  return request_pair_diagnostic(buf, item, diagnostic)
 end
 
 function M.explain()
@@ -487,8 +492,9 @@ function M.explain()
     return
   end
   item.context, item.text, item.offset = item.text, "", 0
-  request(buf, item)
-  pair_diagnostic(buf, item)
+  if not pair_diagnostic(buf, item) then
+    request(buf, item)
+  end
 end
 
 function M.followup()
