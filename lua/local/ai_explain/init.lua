@@ -39,7 +39,7 @@ local function context(buf, row, col)
   end
   local start_row, _, end_row = best:range()
   local text = vim.treesitter.get_node_text(best, buf)
-  if best:type() == "module" or best:type() == "program" then
+  if best:type() == "module" or best:type() == "program" or #text > 24000 then
     start_row, end_row = math.max(0, row - 8), math.min(vim.api.nvim_buf_line_count(buf), row + 9)
     text = table.concat(vim.api.nvim_buf_get_lines(buf, start_row, end_row, false), "\n")
   end
