@@ -2,6 +2,7 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace "ai_explain"
 local pair_ns = vim.api.nvim_create_namespace "ai_pair"
+local pair_visual_ns = vim.api.nvim_create_namespace "ai_pair_visual"
 local buffers = {}
 local config = {}
 local ignored_buftypes = { help = true, prompt = true, quickfix = true, terminal = true }
@@ -132,6 +133,7 @@ local function clear(buf)
   end
   s.entries, s.jobs, s.pair_seen = {}, {}, {}
   vim.diagnostic.reset(pair_ns, buf)
+  vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, 0, -1)
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
@@ -321,6 +323,15 @@ local function request_pair_diagnostic(buf, item, diagnostic)
             user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
           },
         })
+        local line = vim.api.nvim_buf_get_lines(buf, diagnostic.lnum, diagnostic.lnum + 1, false)[1] or ""
+        local highlight = "DiagnosticVirtualText"
+          .. vim.diagnostic.severity[diagnostic.severity]:gsub("^%l", string.upper):lower():gsub("^%l", string.upper)
+        vim.api.nvim_buf_clear_namespace(buf, pair_visual_ns, diagnostic.lnum, diagnostic.lnum + 1)
+        vim.api.nvim_buf_set_extmark(buf, pair_visual_ns, diagnostic.lnum, #line, {
+          virt_text = { { "  ● AI Pair: " .. output, highlight } },
+          virt_text_pos = "inline",
+          priority = 10000,
+        })
       end
     end,
   })
@@ -399,7 +410,7 @@ function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
   vim.api.nvim_set_hl(0, "AiExplain", { link = "DiagnosticVirtualTextHint" })
   vim.api.nvim_set_hl(0, "AiExplainPreview", { link = "Comment" })
-  vim.diagnostic.config({ signs = { priority = 1000 }, severity_sort = true }, pair_ns)
+  vim.diagnostic.config({ signs = { priority = 1000 }, severity_sort = true, virtual_text = false }, pair_ns)
   local group = vim.api.nvim_create_augroup("ai_explain", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
