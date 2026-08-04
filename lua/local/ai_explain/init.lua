@@ -113,7 +113,7 @@ local function render(buf, entry)
   if not current then
     local line = vim.api.nvim_buf_get_lines(buf, entry.row, entry.row + 1, false)[1] or ""
     vim.api.nvim_buf_set_extmark(buf, ns, entry.row, #line, {
-      virt_text = { { " 󰧑", "AiExplainMarker" } },
+      virt_text = { { " 󰌵", "AiExplainMarker" } },
       virt_text_pos = "inline",
       priority = 10000,
     })
