@@ -151,7 +151,7 @@ local function render_pair_visual(buf)
   local line = vim.api.nvim_buf_get_lines(buf, diagnostic.lnum, diagnostic.lnum + 1, false)[1] or ""
   local highlight = "DiagnosticVirtualText"
     .. vim.diagnostic.severity[diagnostic.severity]:gsub("^%l", string.upper):lower():gsub("^%l", string.upper)
-  local text, more = viewport("  ● Buddy: " .. diagnostic.message, 0, eol_width(buf, diagnostic.lnum))
+  local text, more = viewport("  ● Nudge: " .. diagnostic.message, 0, eol_width(buf, diagnostic.lnum))
   vim.api.nvim_buf_set_extmark(buf, pair_visual_ns, diagnostic.lnum, #line, {
     virt_text = { { text .. (more and " …" or ""), highlight } },
     virt_text_pos = "inline",
@@ -290,7 +290,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
     messages = {
       {
         role = "system",
-        content = "You are a concise coding buddy. For an ERROR, state only its root cause. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state only the issue. Reply in English only: one direct sentence of at most 12 words; no Markdown, labels, fixes, or speculation.",
+        content = "You are a concise coding nudge. For an ERROR, state only its root cause. For a WARN, output SKIP unless it has a meaningful correctness, runtime, security, or maintenance impact; if it does, state only the issue. Reply in English only: one direct sentence of at most 12 words; no Markdown, labels, fixes, or speculation.",
       },
       {
         role = "user",
@@ -353,7 +353,7 @@ local function request_pair_diagnostic(buf, item, diagnostic)
             end_lnum = diagnostic.end_lnum,
             end_col = diagnostic.end_col,
             severity = diagnostic.severity,
-            source = "Buddy",
+            source = "Nudge",
             message = output,
             user_data = { original_source = diagnostic.source, original_message = diagnostic.message },
           },
