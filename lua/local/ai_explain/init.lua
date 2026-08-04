@@ -2,7 +2,6 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace "ai_explain"
 local pair_ns = vim.api.nvim_create_namespace "ai_pair"
-local resetting_pair_diagnostics = false
 local buffers = {}
 local config = {}
 local ignored_buftypes = { help = true, prompt = true, quickfix = true, terminal = true }
@@ -418,17 +417,6 @@ function M.setup(opts)
     group = group,
     callback = function(args)
       clear(args.buf)
-    end,
-  })
-  vim.api.nvim_create_autocmd("DiagnosticChanged", {
-    group = group,
-    callback = function(args)
-      if not resetting_pair_diagnostics and args.data.namespace ~= pair_ns then
-        resetting_pair_diagnostics = true
-        state(args.buf).pair_seen = {}
-        vim.diagnostic.reset(pair_ns, args.buf)
-        resetting_pair_diagnostics = false
-      end
     end,
   })
 end
