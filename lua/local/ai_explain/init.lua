@@ -142,7 +142,7 @@ local function request(buf, item, followup)
     messages = {
       {
         role = "system",
-        content = "Reply in Simplified Chinese only with one natural inline annotation of at most 60 characters. Start with the statement's concrete action, then add its immediate purpose only when useful. Never use labels, headings, colons, cursor, line, code, or speculation. No Markdown or code fences. Example style: 将字符映射为整数 token，供后续张量化使用。",
+        content = "Reply in English only with one natural inline annotation of at most 100 characters. Start with the statement's concrete action, then add its immediate purpose only when useful. Never use labels, headings, colons, cursor, line, code, or speculation. No Markdown or code fences. Example style: Maps characters to integer tokens for later tensor conversion.",
       },
       {
         role = "user",
