@@ -114,6 +114,7 @@ local function request(buf, item, followup)
     model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF/UD-Q4_K_M",
     stream = true,
     max_tokens = 350,
+    chat_template_kwargs = { enable_thinking = false },
     messages = {
       {
         role = "system",
@@ -130,6 +131,7 @@ local function request(buf, item, followup)
     },
   }
   local partial = ""
+  local stderr = {}
   local function publish()
     if s.generation == generation and vim.api.nvim_buf_is_valid(buf) then
       s.entries[item.row] = item
@@ -146,7 +148,7 @@ local function request(buf, item, followup)
           and data.choices
           and data.choices[1]
           and data.choices[1].delta
-          and data.choices[1].delta.content
+          and (data.choices[1].delta.content or data.choices[1].delta.reasoning_content)
         if type(token) == "string" then
           item.text = item.text .. token
           if not item.published and #wrap(item.text, vim.api.nvim_win_get_width(0)) >= 5 then
@@ -177,10 +179,15 @@ local function request(buf, item, followup)
     on_stdout = function(_, data)
       consume(table.concat(data, "\n"))
     end,
+    on_stderr = function(_, data)
+      stderr[#stderr + 1] = table.concat(data, "\n")
+    end,
     on_exit = function()
       s.jobs[job] = nil
       if s.generation == generation and vim.api.nvim_buf_is_valid(buf) and item.text ~= "" then
         publish()
+      elseif s.generation == generation then
+        vim.notify("AI explanation request failed: " .. table.concat(stderr, " "), vim.log.levels.WARN)
       end
     end,
   })
@@ -262,7 +269,6 @@ function M.setup()
   vim.keymap.set("n", "<C-p>", function()
     return M.page(-1) and "" or "<C-p>"
   end, { expr = true, desc = "Previous explanation page" })
-  vim.keymap.set("n", "<leader>K", M.followup, { desc = "Ask about code explanation" })
 end
 
 return M
