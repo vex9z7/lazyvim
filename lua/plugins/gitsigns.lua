@@ -1,6 +1,15 @@
 return {
   {
     "lewis6991/gitsigns.nvim",
+    keys = {
+      {
+        "<leader>ga",
+        function()
+          require("gitsigns").stage_buffer()
+        end,
+        desc = "Git Add Current File",
+      },
+    },
     opts = {
       signs = {
         add = { text = "+" },
