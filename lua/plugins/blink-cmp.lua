@@ -45,6 +45,8 @@ return {
           "select_prev",
           "fallback_to_mappings",
         },
+        ["<C-u>"] = { "scroll_documentation_up", "fallback" },
+        ["<C-d>"] = { "scroll_documentation_down", "fallback" },
       },
       signature = {
         enabled = true,
