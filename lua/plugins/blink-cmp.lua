@@ -51,6 +51,17 @@ return {
       signature = {
         enabled = true,
       },
+      sources = {
+        providers = {
+          snippets = {
+            opts = {
+              -- Keep language snippets, but not friendly-snippets' catch-all
+              -- templates (for example, the copyright boilerplate in Oil).
+              global_snippets = {},
+            },
+          },
+        },
+      },
     },
   },
 }
