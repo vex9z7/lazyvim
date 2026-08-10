@@ -51,6 +51,16 @@ return {
       signature = {
         enabled = true,
       },
+      sources = {
+        providers = {
+          snippets = {
+            opts = {
+              -- Keep language snippets; skip generic templates in every buffer.
+              global_snippets = {},
+            },
+          },
+        },
+      },
     },
   },
 }
