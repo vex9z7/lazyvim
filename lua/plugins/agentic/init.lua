@@ -51,6 +51,9 @@ return {
       provider_switcher = {
         hide_unhealthy_providers = true,
       },
+      auto_scroll = {
+        threshold = 0,
+      },
     },
   },
 }
