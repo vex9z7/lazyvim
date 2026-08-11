@@ -14,6 +14,43 @@ This config keeps local project tooling intentionally small and portable.
 
 Install `stylua` and `selene` with your preferred system package manager.
 
+## C, C++, Makefile, and CMake
+
+The config integrates project-owned native tooling; it does not install system
+tools or impose global C/C++ policy. Install the required commands through the
+host package manager or an existing LLVM installation:
+
+```text
+clangd        clang-format        cmake        ninja
+clang-tidy    # clang-tidy diagnostics and explicit batch fixes
+bear          # Makefile projects only
+neocmakelsp   # CMake language intelligence
+cmake-format  # CMake formatter, from cmakelang
+```
+
+Optional tools: `checkmake` for explicit/CI Makefile style checks, and
+`cmake-lint` for external CMake linting.
+
+- C/C++: clangd provides completion, navigation, diagnostics, and clang-tidy
+  code actions; Conform uses the nearest project `.clang-format`.
+- CMake: `neocmakelsp` provides LSP features; Conform uses the nearest
+  cmakelang configuration for `cmake-format`.
+- Makefile: Tree-sitter plus the project `make` command; no automatic formatter
+  is configured because recipes are tab-sensitive. Use `:make <target>` and
+  `:copen` for the native quickfix workflow.
+
+Project files remain authoritative: `compile_commands.json`, `.clangd`,
+`.clang-tidy`, `.clang-format`, CMake presets, and Makefiles. For a Make
+project, generate compilation metadata from a real build, e.g.
+`make clean && bear -- make run`. For CMake, configure the project normally
+(the project or preset should enable `CMAKE_EXPORT_COMPILE_COMMANDS`) before
+expecting fully accurate clangd diagnostics.
+
+Use `:checkhealth vim.lsp`, `<leader>cl`, and `:ConformInfo` to inspect the
+active LSP/formatter. Keep `~/.config/clangd/config.yaml` empty unless it is a
+strictly path-scoped personal override; it has higher precedence than a project
+`.clangd`.
+
 ## Interactive Python
 
 Python files support `# %%` cells through NotebookNavigator and execute them in

@@ -40,6 +40,12 @@ return {
         },
       }
 
+      -- Project-local .clang-format / cmakelang config discovery remains authoritative.
+      -- Do not supply a global style or config file here.
+      opts.formatters_by_ft.c = { "clang_format" }
+      opts.formatters_by_ft.cpp = { "clang_format" }
+      opts.formatters_by_ft.cmake = { "cmake_format" }
+
       -- Run Ruff lint autofix before Ruff formatting on save.
       -- Requires the Mason-managed Ruff CLI from lua/plugins/mason-tools.lua.
       opts.formatters_by_ft.python = { "ruff_fix", "ruff_format" }
