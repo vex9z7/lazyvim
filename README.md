@@ -16,20 +16,25 @@ Install `stylua` and `selene` with your preferred system package manager.
 
 ## C, C++, Makefile, and CMake
 
-The config integrates project-owned native tooling; it does not install system
-tools or impose global C/C++ policy. Install the required commands through the
-host package manager or an existing LLVM installation:
+Mason installs the editor-only tools below automatically; it does not impose
+global C/C++ policy:
 
 ```text
-clangd        clang-format        cmake        ninja
-clang-tidy    # clang-tidy diagnostics and explicit batch fixes
-bear          # Makefile projects only
-neocmakelsp   # CMake language intelligence
-cmake-format  # CMake formatter, from cmakelang
+clangd        clang-format        neocmakelsp        cmakelang
 ```
 
-Optional tools: `checkmake` for explicit/CI Makefile style checks, and
-`cmake-lint` for external CMake linting.
+Install actual build tools through the host package manager or project
+provisioning instead:
+
+```text
+cmake        ninja        compiler toolchain        bear # Makefile projects
+```
+
+`clangd --clang-tidy` supplies interactive clang-tidy diagnostics and code
+actions without a separate `clang-tidy` executable. Install `clang-tidy` only
+when using explicit whole-project batch commands. Optional tools: `checkmake`
+for explicit/CI Makefile style checks, and `cmake-lint` for external CMake
+linting.
 
 - C/C++: clangd provides completion, navigation, diagnostics, and clang-tidy
   code actions; Conform uses the nearest project `.clang-format`.

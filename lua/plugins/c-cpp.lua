@@ -23,7 +23,6 @@ return {
       -- Keep compile flags and shared policy in each project: compile_commands.json,
       -- .clangd, .clang-tidy, and .clang-format. Do not add global flags here.
       opts.servers.clangd = {
-        mason = false,
         cmd = {
           "clangd",
           "--background-index",
@@ -37,7 +36,6 @@ return {
       -- Project .neocmake.toml takes precedence over the optional XDG user config.
       -- Formatting stays in Conform so there is one formatter path.
       opts.servers.neocmake = {
-        mason = false,
         cmd = { "neocmakelsp", "stdio" },
         root_dir = project_root { "CMakePresets.json", "CMakeLists.txt", ".git" },
         single_file_support = true,
