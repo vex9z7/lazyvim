@@ -37,11 +37,9 @@ for explicit/CI Makefile style checks, and `cmake-lint` for external CMake
 linting.
 
 - C/C++: clangd provides completion, navigation, diagnostics, and clang-tidy
-  code actions. Conform formats only when it finds a project `.clang-format` or
-  `_clang-format`; without one it deliberately skips formatting rather than
-  applying clang-format's LLVM fallback style.
-- CMake: `neocmakelsp` provides LSP features. Conform likewise formats only
-  when it finds a project cmakelang configuration for `cmake-format`.
+  code actions; Conform uses the nearest project `.clang-format`.
+- CMake: `neocmakelsp` provides LSP features; Conform uses the nearest
+  cmakelang configuration for `cmake-format`.
 - Makefile: Tree-sitter plus the project `make` command; no automatic formatter
   is configured because recipes are tab-sensitive. Use `:make <target>` and
   `:copen` for the native quickfix workflow.
