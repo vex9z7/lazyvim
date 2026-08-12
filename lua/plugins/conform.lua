@@ -5,6 +5,12 @@ local js_filetypes = {
   "typescriptreact",
 }
 
+local function has_project_config(names)
+  return function(_, ctx)
+    return #vim.fs.find(names, { path = vim.fs.dirname(ctx.filename), upward = true }) > 0
+  end
+end
+
 local prettier_filetypes = {
   "css",
   "graphql",
@@ -40,8 +46,22 @@ return {
         },
       }
 
-      -- Project-local .clang-format / cmakelang config discovery remains authoritative.
-      -- Do not supply a global style or config file here.
+      -- Never let a formatter's built-in fallback rewrite a project without an
+      -- explicit style file. Project policy must opt in to formatting.
+      opts.formatters.clang_format = {
+        condition = has_project_config { ".clang-format", "_clang-format" },
+      }
+      opts.formatters.cmake_format = {
+        condition = has_project_config {
+          ".cmake-format",
+          ".cmake-format.json",
+          ".cmake-format.py",
+          ".cmake-format.yaml",
+          "cmake-format.json",
+          "cmake-format.py",
+          "cmake-format.yaml",
+        },
+      }
       opts.formatters_by_ft.c = { "clang_format" }
       opts.formatters_by_ft.cpp = { "clang_format" }
       opts.formatters_by_ft.cmake = { "cmake_format" }
