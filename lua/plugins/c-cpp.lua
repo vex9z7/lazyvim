@@ -7,6 +7,18 @@ local function project_root(patterns)
   end
 end
 
+local clangd_cmd = {
+  "clangd",
+  "--background-index",
+  "--clang-tidy",
+  "--completion-style=detailed",
+  "--header-insertion=iwyu",
+}
+local cxx = vim.fn.exepath "c++"
+if cxx ~= "" then
+  table.insert(clangd_cmd, "--query-driver=" .. cxx)
+end
+
 return {
   {
     "nvim-treesitter/nvim-treesitter",
@@ -23,13 +35,7 @@ return {
       -- Keep compile flags and shared policy in each project: compile_commands.json,
       -- .clangd, .clang-tidy, and .clang-format. Do not add global flags here.
       opts.servers.clangd = {
-        cmd = {
-          "clangd",
-          "--background-index",
-          "--clang-tidy",
-          "--completion-style=detailed",
-          "--header-insertion=iwyu",
-        },
+        cmd = clangd_cmd,
         root_dir = project_root { "compile_commands.json", "compile_flags.txt", "CMakeLists.txt", "Makefile", ".git" },
       }
 
