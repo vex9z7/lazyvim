@@ -16,7 +16,6 @@ return {
         "clang-format",
         "neocmakelsp",
         "cmakelang",
-        "marksman",
       })
     end,
   },
