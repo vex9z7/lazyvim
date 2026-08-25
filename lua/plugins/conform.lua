@@ -20,6 +20,20 @@ local prettier_filetypes = {
   "typescriptreact",
 }
 
+local function clang_formatters(bufnr)
+  local path = vim.api.nvim_buf_get_name(bufnr)
+  local config = path ~= ""
+    and vim.fs.find({ ".clang-format", "_clang-format" }, {
+      path = vim.fs.dirname(path),
+      upward = true,
+      limit = 1,
+    })[1]
+  if config then
+    return { "clang_format", lsp_format = "never" }
+  end
+  return { lsp_format = "never" }
+end
+
 return {
   {
     "stevearc/conform.nvim",
@@ -40,10 +54,10 @@ return {
         },
       }
 
-      -- Project-local .clang-format / cmakelang config discovery remains authoritative.
-      -- Do not supply a global style or config file here.
-      opts.formatters_by_ft.c = { "clang_format" }
-      opts.formatters_by_ft.cpp = { "clang_format" }
+      -- Only format C/C++ when a project explicitly supplies its style.
+      -- clangd formatting shares clang-format's LLVM fallback, so disable both paths otherwise.
+      opts.formatters_by_ft.c = clang_formatters
+      opts.formatters_by_ft.cpp = clang_formatters
       opts.formatters_by_ft.cmake = { "cmake_format" }
 
       -- Run Ruff lint autofix before Ruff formatting on save.
