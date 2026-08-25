@@ -56,6 +56,12 @@ active LSP/formatter. Keep `~/.config/clangd/config.yaml` empty unless it is a
 strictly path-scoped personal override; it has higher precedence than a project
 `.clangd`.
 
+## Markdown
+
+Mason installs Marksman for Markdown navigation. In a Git repository it resolves
+relative Markdown links and headings across the workspace; use `gd` on a link
+to open its target in Neovim. `gx` remains the system-handler shortcut for URLs.
+
 ## Interactive Python
 
 Python files support `# %%` cells through NotebookNavigator and execute them in
