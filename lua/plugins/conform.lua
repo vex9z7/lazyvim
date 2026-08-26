@@ -67,7 +67,7 @@ return {
           return clang_format_changed.is_llama_cpp(ctx.filename)
         end,
         format = function(_, ctx, lines, callback)
-          clang_format_changed.format(ctx.filename, lines, callback)
+          clang_format_changed.format(ctx.filename, lines, { bufnr = ctx.buf, formatdiff = true }, callback)
         end,
       }
 
