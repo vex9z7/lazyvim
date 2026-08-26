@@ -20,6 +20,8 @@ local prettier_filetypes = {
   "typescriptreact",
 }
 
+local clang_format_changed = require "local.clang-format-changed"
+
 local function clang_formatters(bufnr)
   local path = vim.api.nvim_buf_get_name(bufnr)
   local config = path ~= ""
@@ -29,6 +31,9 @@ local function clang_formatters(bufnr)
       limit = 1,
     })[1]
   if config then
+    if clang_format_changed.is_llama_cpp(path) then
+      return { "clang_format_changed", lsp_format = "never" }
+    end
     return { "clang_format", lsp_format = "never" }
   end
   return { lsp_format = "never" }
@@ -52,6 +57,18 @@ return {
             python = { "ruff_format" },
           },
         },
+      }
+
+      -- llama.cpp intentionally leaves legacy code untouched. Format only the
+      -- ranges changed since the previous write, while retaining Conform's
+      -- normal format-on-save lifecycle and minimal buffer edits.
+      opts.formatters.clang_format_changed = {
+        condition = function(_, ctx)
+          return clang_format_changed.is_llama_cpp(ctx.filename)
+        end,
+        format = function(_, ctx, lines, callback)
+          clang_format_changed.format(ctx.filename, lines, callback)
+        end,
       }
 
       -- Only format C/C++ when a project explicitly supplies its style.

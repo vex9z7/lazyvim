@@ -38,6 +38,9 @@ linting.
 
 - C/C++: clangd provides completion, navigation, diagnostics, and clang-tidy
   code actions; Conform uses the nearest project `.clang-format`.
+  In the `llama.cpp` project only, it formats just the ranges modified since
+  the prior save, preserving the project's intentionally unformatted legacy
+  code.
 - CMake: `neocmakelsp` provides LSP features; Conform uses the nearest
   cmakelang configuration for `cmake-format`.
 - Makefile: Tree-sitter plus the project `make` command; no automatic formatter
