@@ -66,22 +66,21 @@ local function line_arguments(filename, current, opts)
   end
 
   if opts.formatdiff then
-    local file, err = io.open(filename, "rb")
-    if not file then
-      return nil, err
-    end
-    local ranges = changed_ranges(file:read "*a", current)
-    file:close()
-    if #ranges == 0 then
-      return false
-    end
+    local file = io.open(filename, "rb")
+    if file then
+      local ranges = changed_ranges(file:read "*a", current)
+      file:close()
+      if #ranges == 0 then
+        return false
+      end
 
-    local arguments = {}
-    for index = #ranges, 1, -1 do
-      local range = ranges[index]
-      vim.list_extend(arguments, { "--lines", ("%d:%d"):format(range[1], range[2]) })
+      local arguments = {}
+      for index = #ranges, 1, -1 do
+        local range = ranges[index]
+        vim.list_extend(arguments, { "--lines", ("%d:%d"):format(range[1], range[2]) })
+      end
+      return arguments
     end
-    return arguments
   end
 
   local range = opts.range or { 1, 1 }
@@ -129,7 +128,7 @@ function M.format(filename, lines, opts, callback)
       if result.stderr ~= "" then
         vim.notify(result.stderr, vim.log.levels.WARN)
       end
-      if result.code ~= 0 then
+      if result.stdout == "" then
         callback(result.stderr ~= "" and result.stderr or "clang-format failed")
         return
       end
@@ -195,6 +194,16 @@ function M.format_buffer(opts, callback)
     end
     callback(nil)
   end)
+end
+
+-- Convenience entry point for a normal- or Visual-mode mapping. Explicit
+-- ranges still use format_buffer({ range = { start_line, end_line } }).
+function M.format_current(callback)
+  local opts = {}
+  if vim.fn.mode():find "^[vV\22]" then
+    opts.range = { vim.fn.line "'<", vim.fn.line "'>" }
+  end
+  M.format_buffer(opts, callback)
 end
 
 return M
