@@ -161,6 +161,9 @@ function M.format_buffer(opts, callback)
   opts = opts or {}
   callback = callback or function() end
   local bufnr = opts.bufnr or 0
+  if bufnr == 0 then
+    bufnr = vim.api.nvim_get_current_buf()
+  end
   local filename = vim.api.nvim_buf_get_name(bufnr)
   if filename == "" then
     callback "clang-format requires a named buffer"
