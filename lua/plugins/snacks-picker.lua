@@ -64,6 +64,20 @@ return {
             },
           },
         },
+        win = {
+          input = {
+            keys = {
+              ["<c-d>"] = { "preview_scroll_down", mode = { "i", "n" } },
+              ["<c-u>"] = { "preview_scroll_up", mode = { "i", "n" } },
+            },
+          },
+          list = {
+            keys = {
+              ["<c-d>"] = { "preview_scroll_down", mode = { "i", "n" } },
+              ["<c-u>"] = { "preview_scroll_up", mode = { "i", "n" } },
+            },
+          },
+        },
         sources = {
           -- vim.ui.select uses Snacks' `select` source. Keep it visually aligned
           -- with custom action/session pickers so plugin integrations using the
