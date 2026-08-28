@@ -1,6 +1,5 @@
--- Config-local adapter for the pinned Minuet fork. Blink owns the insert-mode
--- completion keys; Minuet gets first chance only when AI virtual text is pending
--- or shown.
+-- Config-local adapter for the pinned Minuet fork. Blink's completion menu
+-- always owns shared completion keys; Minuet handles them only otherwise.
 local M = {}
 
 local function action()
@@ -9,14 +8,17 @@ end
 
 local function run(name)
   local minuet = action()
+  if require("blink.cmp").is_menu_visible() then
+    return false
+  end
+
   if not minuet.is_active() then
     return false
   end
 
-  -- When only the pending/status line is visible, consume accept so Blink does
-  -- not accept a completion item before Minuet has produced text.
+  -- Do not consume Ctrl-y while Minuet is still generating a suggestion.
   if name == "accept" and not minuet.has_suggestion() then
-    return true
+    return false
   end
 
   minuet[name]()

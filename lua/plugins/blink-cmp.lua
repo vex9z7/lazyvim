@@ -45,10 +45,21 @@ return {
           "select_prev",
           "fallback_to_mappings",
         },
+        ["<C-u>"] = { "scroll_documentation_up", "fallback" },
+        ["<C-d>"] = { "scroll_documentation_down", "fallback" },
       },
       signature = {
-        -- Show function signatures while typing call arguments.
         enabled = true,
+      },
+      sources = {
+        providers = {
+          snippets = {
+            opts = {
+              -- Keep language snippets; skip generic templates in every buffer.
+              global_snippets = {},
+            },
+          },
+        },
       },
     },
   },

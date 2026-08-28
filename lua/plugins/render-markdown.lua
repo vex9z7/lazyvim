@@ -2,8 +2,10 @@ return {
   {
     "MeanderingProgrammer/render-markdown.nvim",
     dependencies = { "nvim-mini/mini.icons" },
-    ft = { "markdown", "norg", "rmd", "org", "codecompanion" },
+    ft = { "markdown", "norg", "rmd", "org", "codecompanion", "AgenticChat" },
     opts = {
+      -- AgenticChat registers its Tree-sitter language as markdown.
+      file_types = { "markdown", "norg", "rmd", "org", "codecompanion", "AgenticChat" },
       code = {
         sign = false,
         width = "block",

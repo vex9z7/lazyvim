@@ -142,9 +142,10 @@ end
 local llamacpp = {
   provider = "openai_compatible",
   request_timeout = 8,
-  -- Keep AI ghost text responsive while still avoiding a request on every keypress.
+  -- Wait for a real pause before asking the provider.  This keeps automatic
+  -- completion available without constantly competing with active typing.
   throttle = 1000,
-  debounce = 300,
+  debounce = 1000,
   -- Ask the chat provider for a small set of alternatives; Minuet's next/prev
   -- actions cycle through the returned ghost-text candidates.
   n_completions = 3,
@@ -186,9 +187,8 @@ local llamacpp = {
 local deepseek = vim.tbl_deep_extend("force", llamacpp, {
   provider = "openai_fim_compatible",
   request_timeout = 3,
-  -- Keep AI ghost text responsive while still avoiding a request on every keypress.
   throttle = 1000,
-  debounce = 300,
+  debounce = 1000,
   n_completions = 1,
   context_window = 8192,
   provider_options = {
@@ -212,6 +212,9 @@ return {
     branch = "feat/streaming-virtualtext",
     main = "minuet",
     event = "InsertEnter",
+    keys = {
+      { "<leader>uM", "<cmd>Minuet virtualtext toggle<cr>", desc = "Toggle AI completion" },
+    },
     opts = vim.tbl_deep_extend("force", llamacpp, {
       presets = {
         llamacpp = llamacpp,

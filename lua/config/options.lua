@@ -2,6 +2,12 @@
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 -- Add any additional options here
 
+-- Prefer an isolated Python host for Python-based Neovim plugins when available.
+local python_host = vim.fn.stdpath "data" .. "/python/bin/python"
+if vim.fn.executable(python_host) == 1 then
+  vim.g.python3_host_prog = python_host
+end
+
 -- Show absolute line number for the current line and relative line numbers for
 -- surrounding lines, which makes count-based motions easier.
 vim.o.number = true

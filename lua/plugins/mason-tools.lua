@@ -10,6 +10,13 @@ return {
         "eslint_d",
         "prettierd",
         "ruff",
+        -- Editor-only native-language tools. Keep actual build tools (cmake,
+        -- ninja, compilers, and bear) under host/project management.
+        "clangd",
+        "clang-format",
+        "neocmakelsp",
+        "cmakelang",
+        "marksman",
       })
     end,
   },
